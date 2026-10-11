@@ -49,6 +49,7 @@ tools/
 scripts/                PowerShell: admin panel launcher, publish packing
 .claude/skills/painter/ Claude Code skill: an operational guide to this
                         repository (structure, running, checks, publishing)
+images/                 admin panel screenshots (used in the READMEs)
 ```
 
 ## Requirements
@@ -183,6 +184,12 @@ What you can do with it:
   `publish/site-<date>.zip` with a change report vs. the previous archive —
   how many files were added, modified or deleted, and whether the hosting
   web root should be cleaned before unpacking
+
+The admin panel: news, artworks, exhibitions and the build page.
+
+| ![Admin panel: news](images/news.PNG) | ![Admin panel: artworks](images/pictures.PNG) |
+|---|---|
+| ![Admin panel: exhibitions](images/exhibitions.PNG) | ![Admin panel: build and publish](images/build.PNG) |
 
 ## Deploy as an archive
 
