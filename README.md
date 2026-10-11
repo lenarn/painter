@@ -47,6 +47,8 @@ tools/
   admin/                local admin panel: content forms, spell checker,
                         build, publish archive, preview
 scripts/                PowerShell: admin panel launcher, publish packing
+.claude/skills/painter/ Claude Code skill: an operational guide to this
+                        repository (structure, running, checks, publishing)
 ```
 
 ## Requirements

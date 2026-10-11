@@ -27,8 +27,13 @@ posts/
 exhibitions/
 lectures/
 news/
-.claude/
 CLAUDE.md
+
+# .claude/ — личное (агенты, настройки), но скилл painter публикуется
+.claude/*
+!.claude/skills
+.claude/skills/*
+!.claude/skills/painter
 
 # --- scan source folders (imported via tools/catalogimport) ---
 /родные просторы/
