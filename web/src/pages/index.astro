@@ -1,0 +1,211 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { Picture } from 'astro:assets';
+import {
+  loadCatalog,
+  categoriesWithCounts,
+  categoryHref,
+  resolveImage,
+  titleFor,
+  featuredArtworks,
+} from '../lib/catalog';
+import { sortedNews, newsArtworks, formatDate, resolveNewsPhoto, newsAnchorHref, type NewsItem } from '../lib/news';
+import { aboutData } from '../lib/content';
+import { ogImageSrc } from '../lib/seo';
+
+const arts = loadCatalog();
+const categories = categoriesWithCounts(arts);
+const fullName = `${aboutData.name} ${aboutData.surname}`.trim();
+
+// og:image главной — первая избранная работа.
+const ogImage = await ogImageSrc(resolveImage(featuredArtworks(arts)[0]));
+
+// Лента на главной: до 8 последних новостей (свежая — карточка двойной
+// ширины, 8 карточек закрывают сетку без одиноких клеток).
+const news = sortedNews().slice(0, 8);
+
+// Первое изображение новости: первая работа из каталога,
+// иначе первое произвольное фото.
+function newsImage(item: NewsItem) {
+  const work = newsArtworks(arts, item)[0];
+  if (work) {
+    return { img: resolveImage(work), alt: work.alt ?? titleFor(work) };
+  }
+  const name = (item.photos ?? [])[0];
+  const img = name ? resolveNewsPhoto(name) : undefined;
+  return img ? { img, alt: `Фото: ${item.title}` } : { img: undefined, alt: '' };
+}
+---
+
+<Layout
+  title={`${fullName} — художник`}
+  description={`Живопись и графика художника ${fullName}. Галерея работ, новости, выставки, контакты.`}
+  image={ogImage}
+>
+  <section class="section container">
+    {/* h1 главной скрыт: заголовки секций остаются визуальными h2,
+        структура для скринридеров и поисковиков — полная. */}
+    <h1 class="visually-hidden">{fullName} — художник</h1>
+    <div class="section-head">
+      <h2>Новости</h2>
+      <a href="/news" class="link-more">Все новости →</a>
+    </div>
+    {news.length === 0 ? (
+      <p class="muted">Новостей пока нет.</p>
+    ) : (
+      <div class="news-grid">
+        {news.map((item, i) => {
+          const { img, alt } = newsImage(item);
+          const text = item.text.join(' ');
+          return (
+            <a class="card" class:list={{ featured: i === 0 }} href={newsAnchorHref(item.date)}>
+              {img ? (
+                <div class="frame">
+                  <Picture
+                    src={img}
+                    alt={alt}
+                    widths={i === 0 ? [780, 1200] : [480, 760]}
+                    sizes={
+                      i === 0
+                        ? '(max-width: 960px) 92vw, 780px'
+                        : '(max-width: 640px) 92vw, (max-width: 960px) 44vw, 376px'
+                    }
+                    formats={['webp']}
+                    loading={i === 0 ? 'eager' : 'lazy'}
+                    fetchpriority={i === 0 ? 'high' : undefined}
+                    decoding="async"
+                  />
+                </div>
+              ) : null}
+              <div class="body">
+                <p class="date">{formatDate(item.date)}</p>
+                <h3 class="title">{item.title}</h3>
+                <p class="text">{text}</p>
+              </div>
+            </a>
+          );
+        })}
+      </div>
+    )}
+  </section>
+
+  <section class="section container">
+    <div class="section-head">
+      <h2>Галерея</h2>
+      <a href="/gallery" class="link-more">Вся галерея →</a>
+    </div>
+    <div class="themes">
+      {categories.map((c) => (
+        <a href={categoryHref(c.name)} class="theme">
+          <span class="theme-name">{c.name}</span>
+          <span class="theme-count">{c.count}</span>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <section class="section container about-preview">
+    <div class="about-grid">
+      <div>
+        <p class="eyebrow">Об авторе</p>
+        <h2>{fullName}</h2>
+        <p class="muted">Художник. Живопись, графика, работа с натурой.</p>
+        <a href="/about" class="link-more">Подробнее →</a>
+      </div>
+      <div>
+        <p class="eyebrow">Контакты</p>
+        <h2>Связаться</h2>
+        <p class="muted">Покупка картин и вопросы — через контакт с художником.</p>
+        <a href="/contacts" class="link-more">Контакты →</a>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 32px; }
+  .section-head h2 { margin: 0; }
+  .link-more { font-size: 0.9rem; color: var(--fg-soft); border-bottom: 1px solid var(--line); padding-bottom: 2px; }
+  .link-more:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* Сетка новостей: 3 колонки, свежая новость занимает две. */
+  .news-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+  .card {
+    display: flex; flex-direction: column; gap: 16px;
+    color: inherit;
+    transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .card:hover { transform: translateY(-4px); }
+  .card.featured {
+    grid-column: span 2;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: stretch;
+    gap: 28px;
+  }
+  /* Фото — в рамке с паспарту, без обрезки. Десктоп: рамка 4:3,
+     картинка вписана (object-fit: contain). */
+  .frame {
+    background: var(--frame);
+    border: 1px solid var(--line);
+    padding: 10px;
+    box-shadow: var(--frame-shadow);
+    aspect-ratio: 4 / 3;
+    display: grid;
+    place-items: center;
+  }
+  .frame picture { width: 100%; height: 100%; display: block; }
+  .frame img { width: 100%; height: 100%; object-fit: contain; }
+  /* Большая рамка: высота фиксированная, picture позиционируется
+     абсолютно. Проценты высоты (height:100%) внутри грид-элементов
+     Chrome не резолвит — картинка брала натуральную высоту и
+     выходила за рамку. Абсолютное позиционирование от процентов
+     не зависит. */
+  .card.featured .frame { position: relative; height: 420px; aspect-ratio: auto; }
+  .card.featured .frame picture { position: absolute; inset: 10px; width: auto; height: auto; }
+  .body { display: flex; flex-direction: column; align-self: center; }
+  .date { font-size: 0.85rem; color: var(--fg-soft); margin: 0 0 6px; }
+  .title { font-family: var(--font-serif); font-weight: 500; margin: 0 0 10px; }
+  .card .title { font-size: 1.25rem; }
+  .card.featured .title { font-size: clamp(1.4rem, 2.5vw, 1.8rem); }
+  /* Длинный текст обрезается: у свежей новости строк больше. */
+  .text {
+    font-size: 1rem; color: var(--fg-soft); margin: 0;
+    display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden;
+    -webkit-line-clamp: 2;
+  }
+  .card.featured .text { -webkit-line-clamp: 4; font-size: 1.05rem; max-width: 56ch; }
+  .card:hover .title { color: var(--accent); }
+
+  .themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+  .theme {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 18px 22px; border: 1px solid var(--line); border-radius: var(--radius);
+    transition: border-color 0.2s ease, transform 0.2s ease;
+  }
+  .theme:hover { border-color: var(--fg); transform: translateY(-2px); }
+  .theme-name { font-family: var(--font-serif); font-size: 1.1rem; }
+  .theme-count { font-size: 0.8rem; color: var(--fg-soft); }
+
+  .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; }
+  @media (max-width: 720px) { .about-grid { grid-template-columns: 1fr; } }
+  .about-preview h2 { margin-bottom: 0.4em; }
+
+  @media (max-width: 960px) {
+    .news-grid { grid-template-columns: repeat(2, 1fr); }
+    .card.featured { grid-column: span 2; }
+    /* Мобильный WebKit: фикс. пропорция + object-fit сбоит при
+       перерисовке (пиксельная сетка, пропадания при прокрутке) —
+       на узких экранах картинка идёт естественной высотой. */
+    .frame { aspect-ratio: auto; display: block; }
+    .frame img { height: auto; }
+    /* Отмена абсолютного позиционирования большой рамки:
+       на телефоне — естественная высота, как у остальных. */
+    .card.featured .frame { position: static; height: auto; }
+    .card.featured .frame picture { position: static; inset: auto; width: 100%; height: auto; }
+  }
+  @media (max-width: 640px) {
+    .news-grid { grid-template-columns: 1fr; }
+    .card.featured { grid-column: span 1; grid-template-columns: 1fr; }
+  }
+</style>

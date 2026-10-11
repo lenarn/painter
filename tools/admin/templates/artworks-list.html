@@ -1,0 +1,38 @@
+{{define "content"}}
+<h1>Картины</h1>
+
+{{if .Saved}}<div class="saved">Сохранено. Не забудь пересобрать сайт.</div>{{end}}
+{{if .Note}}<div class="errors" style="color:var(--accent);background:#f7f3ea;border-color:#dcc9a8">{{.Note}}</div>{{end}}
+
+<p><a href="/artworks/new">+ Новая картина</a></p>
+
+<input type="text" id="art-search" placeholder="Поиск по названию…" oninput="filterArts()">
+<div class="picker" id="art-picker" style="max-height:none">
+  {{range .Items}}
+  <div class="art-row">
+    <a href="/artworks/edit?slug={{.Slug}}">
+      <img class="thumb" src="/assets/artworks/{{.File}}" alt="" loading="lazy">
+    </a>
+    <div class="art-info">
+      <a href="/artworks/edit?slug={{.Slug}}"><b>{{.Title}}</b></a>
+      {{if .Year}}<span class="muted">, {{.Year}}</span>{{end}}
+      {{if .Technique}}<span class="muted"> — {{.Technique}}</span>{{end}}
+      {{if .NeedsMetadata}}<span class="badge">черновик</span>{{end}}
+      {{if .Available}}<span class="badge badge-ok">в наличии</span>{{end}}
+      {{if .RelatedN}}<span class="badge">серия: {{.RelatedN}}</span>{{end}}
+      <div class="muted" style="font-size:12.5px">{{range .Categories}}{{.}} · {{end}}</div>
+    </div>
+  </div>
+  {{end}}
+</div>
+
+<script>
+function filterArts() {
+  const q = document.getElementById('art-search').value.trim().toLowerCase();
+  document.querySelectorAll('#art-picker .art-row').forEach(row => {
+    const text = row.textContent.toLowerCase();
+    row.style.display = !q || text.includes(q) ? '' : 'none';
+  });
+}
+</script>
+{{end}}

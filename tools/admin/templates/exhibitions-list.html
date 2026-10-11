@@ -1,0 +1,19 @@
+{{define "content"}}
+<h1>Выставки</h1>
+
+{{if .Saved}}<div class="saved">Сохранено. Не забудь пересобрать сайт.</div>{{end}}
+
+<p><a href="/exhibitions/new">+ Новая запись</a></p>
+
+<table>
+  <tr><th>Год</th><th>Период</th><th>Название</th><th>Место</th></tr>
+  {{range .Items}}
+  <tr>
+    <td><a href="/exhibitions/edit?i={{.I}}">{{.Year}}</a></td>
+    <td><a href="/exhibitions/edit?i={{.I}}">{{.Period}}</a></td>
+    <td><a href="/exhibitions/edit?i={{.I}}"><b>{{.Title}}</b></a></td>
+    <td>{{.Place}}</td>
+  </tr>
+  {{end}}
+</table>
+{{end}}

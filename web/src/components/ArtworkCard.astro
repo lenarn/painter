@@ -1,0 +1,108 @@
+---
+import { Picture } from 'astro:assets';
+import { type Artwork, resolveImage, titleFor, captionFor } from '../lib/catalog';
+
+interface Props { art: Artwork; eager?: boolean; priority?: boolean; from?: string; index?: number }
+const { art, eager = false, priority = false, from = '', index = 0 } = Astro.props;
+const img = resolveImage(art);
+// from — раздел-источник (path или "v-nalichii"): страница работы по нему
+// подбирает соседей для пейджера и лайтбокса.
+const href = `/artworks/${art.slug}` + (from ? `?from=${encodeURIComponent(from)}` : '');
+const alt = art.alt ?? captionFor(art);
+---
+
+<div class="card">
+  {/* Клик по картинке сетка галереи перехватывает и открывает лайтбокс
+      (data-lb-index — позиция в списке раздела); без JS это обычная
+      ссылка на страницу работы. Название — всегда ссылка на страницу. */}
+  <a class="frame-link" href={href} data-lb-index={index}>
+    <div class="frame">
+      {img ? (
+        <Picture
+          src={img}
+          alt={alt}
+          widths={[480, 760]}
+          sizes="(max-width: 560px) 92vw, (max-width: 920px) 46vw, 376px"
+          formats={['webp']}
+          loading={eager ? 'eager' : 'lazy'}
+          fetchpriority={priority ? 'high' : undefined}
+          decoding="async"
+        />
+      ) : (
+        <div class="missing">нет изображения</div>
+      )}
+    </div>
+  </a>
+  <a class="meta" href={href}>
+    <span class="title">{titleFor(art)}</span>
+    {art.available ? <span class="badge sale">в наличии</span> : null}
+    {art.needs_metadata ? <span class="badge">черновик</span> : null}
+  </a>
+</div>
+
+<style>
+  .frame-link { display: block; cursor: zoom-in; }
+  .frame-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+  .frame {
+    background: var(--frame);
+    border: 1px solid var(--line);
+    padding: 10px;
+    box-shadow: var(--frame-shadow);
+    transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.35s ease;
+    overflow: hidden;
+    aspect-ratio: var(--ar, 4 / 5);
+    display: grid;
+    place-items: center;
+  }
+  .frame-link:hover .frame {
+    transform: translateY(-4px);
+    box-shadow: 0 1px 2px rgba(20,18,14,0.06), 0 24px 48px -16px rgba(20,18,14,0.28);
+  }
+  .frame picture {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+  .missing {
+    aspect-ratio: 4 / 5;
+    display: grid;
+    place-items: center;
+    color: var(--fg-soft);
+    font-size: 0.8rem;
+    background: var(--bg-soft);
+  }
+  .meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+    font-size: 1.08rem;
+    transition: color 0.3s ease;
+  }
+  .meta:hover { color: var(--accent); }
+  /* Прозрачность — только на названии: у бейджа «в наличии» без неё
+     контраст акцент-цвета проходит норму WCAG (4.5:1). */
+  .title {
+    font-family: var(--font-serif);
+    font-size: 1.15rem;
+    opacity: 0.92;
+    transition: opacity 0.3s ease;
+  }
+  .meta:hover .title { opacity: 1; }
+  .badge {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--fg-soft);
+    border: 1px solid var(--line);
+    padding: 2px 7px;
+    border-radius: 20px;
+  }
+  .badge.sale { color: var(--accent); border-color: var(--accent); }
+</style>

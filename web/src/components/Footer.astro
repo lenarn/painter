@@ -1,0 +1,38 @@
+---
+import Copyright from './Copyright.astro';
+import { aboutData } from '../lib/content';
+const year = new Date().getFullYear();
+const fullName = `${aboutData.name} ${aboutData.surname}`.trim();
+---
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div class="footer-about">
+      <div class="footer-brand">{fullName} — художник</div>
+      <p class="muted">Живопись, графика, натюрморт и пейзаж.<br />Покупка — через контакт с художником.</p>
+    </div>
+    <Copyright />
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    border-top: 1px solid var(--line);
+    background: var(--bg-soft);
+    padding-block: 40px;
+    margin-top: 60px;
+  }
+  .footer-inner {
+    display: flex;
+    justify-content: space-between;
+    gap: 32px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+  .footer-brand {
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+  }
+  .footer-about p { font-size: 0.85rem; margin: 0; }
+</style>

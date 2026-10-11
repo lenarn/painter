@@ -1,0 +1,309 @@
+{{define "content"}}
+<h1>{{if ge .Index 0}}Правка новости{{else}}Новая новость{{end}}</h1>
+
+{{if .Errors}}
+<div class="errors">
+  {{range .Errors}}<div>• {{.}}</div>{{end}}
+</div>
+{{end}}
+
+<form method="POST" action="/news/save" enctype="multipart/form-data">
+  <input type="hidden" name="i" value="{{.Index}}">
+
+  <div class="panel">
+    <label>Дата (клик — календарь; можно печатать «9.10» — год подставится)</label>
+    <input type="hidden" name="date" id="date-iso" value="{{.Item.Date}}">
+    <div style="position:relative;max-width:180px">
+      <input type="text" id="f-date" autocomplete="off" placeholder="09.10.2026">
+      <div class="cal" id="date-cal"></div>
+    </div>
+
+    <label>Заголовок</label>
+    <input type="text" name="title" id="f-title" value="{{.Item.Title}}" spellcheck="true" required>
+
+    <label>Текст (абзац — пустая строка между ними; строки внутри абзаца сохраняются)</label>
+    <textarea name="text" id="f-text" spellcheck="true">{{.Text}}</textarea>
+    <div class="hint">Кнопка ниже проверит заголовок и текст через Яндекс.Спеллер — до сохранения.</div>
+    <div class="spell-box" id="spell-results"></div>
+    <p style="margin-top:12px">
+      <button type="button" class="ghost" onclick="spellCheck()">Проверить орфографию</button>
+    </p>
+  </div>
+
+  {{if .Linked}}
+  <div class="panel">
+    <label>Картины в новости</label>
+    <div class="linked">
+      {{range .Linked}}
+      <div class="linked-item">
+        <img src="/assets/artworks/{{.File}}" alt="{{.Title}}" loading="lazy" width="200">
+        <div class="linked-title">{{.Title}}{{if .Year}}, {{.Year}}{{end}}</div>
+      </div>
+      {{end}}
+    </div>
+  </div>
+  {{end}}
+
+  <div class="panel">
+    <label>Работы каталога (поиск по названию)</label>
+    <input type="text" id="art-search" placeholder="Начни печатать название…" oninput="filterArts()">
+    <div class="picker" id="art-picker">
+      {{range .Artworks}}
+      <label class="check">
+        <input type="checkbox" name="artworks" value="{{.Slug}}"
+               {{if has $.Item.Artworks .Slug}}checked{{end}}>
+        <img class="thumb" src="/assets/artworks/{{.File}}" alt="" loading="lazy">
+        <span>{{.Title}}{{if .Year}}, {{.Year}}{{end}}</span>
+      </label>
+      {{end}}
+    </div>
+    <div class="hint">Выбранные здесь работы показываются в новости картинками.</div>
+  </div>
+
+  <div class="panel">
+    <label>Фото новости (вернисаж, зал; можно несколько)</label>
+    {{if .Photos}}
+      <p class="muted" style="margin:4px 0">Уже в записи: {{range .Photos}}{{.}} {{end}}</p>
+    {{end}}
+    <input type="file" name="photos" accept=".jpg,.jpeg,.png" multiple>
+  </div>
+
+  <details>
+    <summary>+ Новые картины (создадутся в каталоге и привяжутся к новости)</summary>
+    <input type="hidden" name="na_count" id="na-count" value="{{len .NABlocks}}">
+    <div id="na-blocks">
+      {{range $b := .NABlocks}}
+      <div class="panel na-block">
+        <p style="margin:0 0 8px"><b class="na-num">Картина {{$b.Num}}</b></p>
+        <label>Файл картины (скан/фото, jpg/jpeg/png)</label>
+        <input type="file" name="na_file_{{$b.Index}}" accept=".jpg,.jpeg,.png">
+        <div class="row">
+          <div>
+            <label>Название</label>
+            <input type="text" name="na_title_{{$b.Index}}" value="{{$b.Title}}" spellcheck="true">
+          </div>
+          <div style="max-width:120px">
+            <label>Год</label>
+            <input type="number" name="na_year_{{$b.Index}}" value="{{$b.Year}}" min="1900" max="2100">
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Техника (подставлена по умолчанию — поменяй, если другая)</label>
+            <input type="text" name="na_technique_{{$b.Index}}"
+                   value="{{if $b.Technique}}{{$b.Technique}}{{else}}холст, масло{{end}}">
+          </div>
+          <div>
+            <label>Размер, см (можно дробные: 14.5)</label>
+            <div class="row">
+              <input type="text" name="na_w_{{$b.Index}}" value="{{$b.W}}" placeholder="ширина">
+              <input type="text" name="na_h_{{$b.Index}}" value="{{$b.H}}" placeholder="высота">
+            </div>
+          </div>
+        </div>
+        <label>Разделы галереи</label>
+        <div>
+          {{range $.Categories}}
+          <label class="check">
+            <input type="checkbox" name="na_categories_{{$b.Index}}" value="{{.}}"
+                   {{if index $b.Checked .}}checked{{end}}>
+            {{.}}
+          </label>
+          {{end}}
+        </div>
+        <label class="check"><input type="checkbox" name="na_available_{{$b.Index}}"
+               {{if $b.Available}}checked{{end}}> в наличии</label>
+      </div>
+      {{end}}
+    </div>
+    <p><button type="button" class="ghost" onclick="addArtBlock()">+ ещё картина</button></p>
+    <div class="hint">Блоки без файла пропускаются. Если файл уже есть в каталоге (дубль скана) —
+    новая запись не создастся, к новости привяжется существующая работа. Недозаполненное —
+    черновик (needs_metadata).</div>
+  </details>
+
+  <p style="margin-top:20px">
+    <button type="submit">Сохранить</button>
+    <a class="muted" href="/news" style="margin-left:16px">отмена</a>
+  </p>
+</form>
+
+<script>
+// Дата: поле в русском формате (день.месяц.год), ISO уходит в скрытое
+// поле date. Клик по полю — календарь; печать «9.10» дополнит текущим годом.
+const MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август',
+                'Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const dateField = document.getElementById('f-date');
+const dateISO = document.getElementById('date-iso');
+const cal = document.getElementById('date-cal');
+let calY = 0, calM = 0;
+
+const isoOf = (y, m, d) => y + '-' + String(m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+const fmtRU = iso => { const p = iso.split('-'); return p[2] + '.' + p[1] + '.' + p[0]; };
+
+function parseRU(s) {
+  const m = s.trim().match(/^(\d{1,2})\.(\d{1,2})(?:\.(\d{4}))?$/);
+  if (!m) return null;
+  const d = +m[1], mo = +m[2], y = m[3] ? +m[3] : new Date().getFullYear();
+  const dt = new Date(y, mo - 1, d);
+  if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return null;
+  return isoOf(y, mo - 1, d);
+}
+
+// Печать: парсим на лету; нераспознанное — ISO пустеет, сервер откажет
+// с сообщением про дату (мусор не сохранится молча).
+function syncDate() {
+  const iso = parseRU(dateField.value);
+  dateISO.value = iso || '';
+  dateField.style.borderColor = dateField.value && !iso ? 'var(--err)' : '';
+}
+
+function openCal() {
+  const cur = dateISO.value ? dateISO.value.split('-').map(Number) : null;
+  const now = new Date();
+  calY = cur ? cur[0] : now.getFullYear();
+  calM = cur ? cur[1] - 1 : now.getMonth();
+  renderCal();
+  cal.style.display = 'block';
+}
+
+function renderCal() {
+  const first = (new Date(calY, calM, 1).getDay() + 6) % 7; // неделя с пн
+  const days = new Date(calY, calM + 1, 0).getDate();
+  const now = new Date();
+  const today = isoOf(now.getFullYear(), now.getMonth(), now.getDate());
+  let html = '<div class="cal-head">' +
+    '<a href="#" data-move="-1">&#8249;</a>' +
+    '<b>' + MONTHS[calM] + ' ' + calY + '</b>' +
+    '<a href="#" data-move="1">&#8250;</a></div>' +
+    '<div class="cal-grid">' +
+    ['пн','вт','ср','чт','пт','сб','вс'].map(w => '<span class="cal-dow">' + w + '</span>').join('');
+  for (let i = 0; i < first; i++) html += '<span></span>';
+  for (let d = 1; d <= days; d++) {
+    const iso = isoOf(calY, calM, d);
+    const cls = iso === dateISO.value ? 'cal-day cal-sel' :
+                iso === today ? 'cal-day cal-today' : 'cal-day';
+    html += '<a href="#" class="' + cls + '" data-date="' + iso + '">' + d + '</a>';
+  }
+  html += '</div><div class="cal-foot"><a href="#" data-today="1">Сегодня</a></div>';
+  cal.innerHTML = html;
+}
+
+function calMove(delta) {
+  calM += delta;
+  if (calM < 0) { calM = 11; calY--; } else if (calM > 11) { calM = 0; calY++; }
+  renderCal();
+}
+
+function calPick(iso) {
+  dateISO.value = iso;
+  dateField.value = fmtRU(iso);
+  dateField.style.borderColor = '';
+  cal.style.display = 'none';
+}
+
+function calToday() {
+  const n = new Date();
+  calPick(isoOf(n.getFullYear(), n.getMonth(), n.getDate()));
+}
+
+// Клик внутри календаря — делегирование с stopPropagation: перерисовка
+// сетки отсоединяет кликнутую ссылку от DOM, поэтому «клик вне»
+// в document-обработчике не должен видеть такие клики.
+cal.addEventListener('click', e => {
+  e.stopPropagation();
+  const a = e.target.closest('a');
+  if (!a) return;
+  if (a.dataset.move) calMove(+a.dataset.move);
+  else if (a.dataset.today) calToday();
+  else if (a.dataset.date) calPick(a.dataset.date);
+});
+
+// Инициализация: пустая дата (новая новость) — сегодня; иначе — из записи.
+if (dateISO.value === '') {
+  const n = new Date();
+  dateISO.value = isoOf(n.getFullYear(), n.getMonth(), n.getDate());
+}
+dateField.value = fmtRU(dateISO.value);
+dateField.addEventListener('input', syncDate);
+dateField.addEventListener('focus', openCal);
+document.addEventListener('click', e => {
+  if (!cal.contains(e.target) && e.target !== dateField) cal.style.display = 'none';
+});
+
+// «+ ещё картина»: клонируем последний блок, меняем индексы полей,
+// чистим значения, обновляем счётчик блоков.
+function addArtBlock() {
+  const cont = document.getElementById('na-blocks');
+  const n = cont.children.length;
+  const clone = cont.lastElementChild.cloneNode(true);
+  clone.querySelectorAll('[name^="na_"]').forEach(el => {
+    el.name = el.name.replace(/_\d+$/, '_' + n);
+  });
+  clone.querySelectorAll('input[type="text"],input[type="number"],input[type="file"]')
+    .forEach(el => el.value = '');
+  clone.querySelectorAll('input[type="checkbox"]').forEach(el => el.checked = false);
+  const num = clone.querySelector('.na-num');
+  if (num) num.textContent = 'Картина ' + (n + 1);
+  cont.appendChild(clone);
+  document.getElementById('na-count').value = String(n + 1);
+}
+
+// Поиск по работам каталога.
+function filterArts() {
+  const q = document.getElementById('art-search').value.trim().toLowerCase();
+  const labels = document.getElementById('art-picker').querySelectorAll('label');
+  labels.forEach(l => {
+    l.style.display = !q || l.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+// Проверка орфографии: заголовок + текст → /spell → список с подсказками.
+// Клик по подсказке заменяет все вхождения слова в поле.
+async function spellCheck() {
+  const box = document.getElementById('spell-results');
+  const title = document.getElementById('f-title');
+  const text = document.getElementById('f-text');
+  box.innerHTML = '<span class="muted">Проверяю…</span>';
+  try {
+    const res = await fetch('/spell', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({title: title.value, text: text.value}),
+    });
+    const data = await res.json();
+    if (!data.available) {
+      box.innerHTML = '<div class="muted">' + data.error + ' — можно сохранить без проверки.</div>';
+      return;
+    }
+    const fields = data.fields || {};
+    const names = {title: 'Заголовок', text: 'Текст'};
+    let html = '';
+    let total = 0;
+    for (const [name, findings] of Object.entries(fields)) {
+      html += '<div><b>' + names[name] + ':</b></div>';
+      for (const f of findings) {
+        total++;
+        html += '<div class="spell-item"><span class="spell-word">' + f.word + '</span>' +
+          f.s.map(s =>
+            '<span class="spell-sug" data-field="' + name + '" data-from="' + f.word.replace(/"/g,'&quot;') +
+            '" data-to="' + s.replace(/"/g,'&quot;') + '">' + s + '</span>'
+          ).join('') + '</div>';
+      }
+    }
+    box.innerHTML = total === 0
+      ? '<span class="muted">Ошибок не найдено.</span>'
+      : html;
+    box.querySelectorAll('.spell-sug').forEach(el => {
+      el.onclick = () => {
+        const field = el.dataset.field === 'title' ? title : text;
+        field.value = field.value.split(el.dataset.from).join(el.dataset.to);
+        el.closest('.spell-item').style.opacity = '.4';
+      };
+    });
+  } catch (e) {
+    box.innerHTML = '<div class="muted">Проверка недоступна — можно сохранить без проверки.</div>';
+  }
+}
+</script>
+{{end}}

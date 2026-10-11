@@ -1,0 +1,11 @@
+{
+  "name": "Your",
+  "surname": "Name",
+  "intro": [
+    "Welcome to my website!",
+    "A couple of paragraphs about you as an artist: what you paint, what inspires you, what you want the viewer to feel."
+  ],
+  "memberships": [
+    { "title": "Member of an artists' association", "year": 2020 }
+  ]
+}

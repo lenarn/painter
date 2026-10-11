@@ -1,0 +1,14 @@
+{{define "content"}}
+<h1>Сайт художника</h1>
+
+<div class="cards">
+  <div class="card"><span class="muted">Работ в каталоге</span><b>{{.Artworks}}</b></div>
+  <div class="card"><span class="muted">Новостей в ленте</span><b>{{.News}}</b></div>
+  <div class="card"><span class="muted">Черновиков картин</span><b>{{.Drafts}}</b></div>
+</div>
+
+<h2>Новости</h2>
+<p><a href="/news">Список и формы →</a></p>
+<p class="muted">Изменения попадают на сайт после пересборки (npm run build).
+Кнопки «Собрать сайт» и «Архив» появятся на шаге 4.</p>
+{{end}}

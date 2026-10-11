@@ -1,0 +1,23 @@
+---
+import { aboutData } from '../lib/content';
+// Автор берётся из content/about.json (единый источник). Год-диапазон — с 2026
+// (год первой публикации сайта).
+const author = `${aboutData.name} ${aboutData.surname}`.trim();
+const startYear = 2026;
+const now = new Date().getFullYear();
+const years = now > startYear ? `${startYear}—${now}` : `${startYear}`;
+---
+
+<p class="copyright">
+  © {years} {author}. Все права защищены.<br />
+  Использование изображений без письменного разрешения автора запрещено.
+</p>
+
+<style>
+  .copyright {
+    font-size: 0.78rem;
+    color: var(--fg-soft);
+    line-height: 1.7;
+    margin: 0;
+  }
+</style>

@@ -1,0 +1,109 @@
+{{define "content"}}
+<h1>{{if .IsEdit}}Правка картины{{else}}Новая картина{{end}}</h1>
+
+{{if .Errors}}
+<div class="errors">
+  {{range .Errors}}<div>• {{.}}</div>{{end}}
+</div>
+{{end}}
+
+<form method="POST" action="/artworks/save" enctype="multipart/form-data">
+  <input type="hidden" name="slug" value="{{.Item.Slug}}">
+
+  <div class="panel">
+    {{if .IsEdit}}
+    <div class="edit-preview">
+      <img src="/assets/artworks/{{.Item.File}}" alt="{{.Item.Title}}">
+      <div class="hint">{{.Item.File}} · /artworks/{{.Item.Slug}}/</div>
+    </div>
+    <div class="hint">Файл здесь не меняется — замена файла отдельным действием внизу страницы.</div>
+    {{else}}
+    <label>Файл картины (скан/фото, jpg/jpeg/png)</label>
+    <input type="file" name="file" accept=".jpg,.jpeg,.png">
+    {{end}}
+    <div class="row">
+      <div>
+        <label>Название</label>
+        <input type="text" name="title" value="{{.Item.Title}}" spellcheck="true" required>
+      </div>
+      <div style="max-width:120px">
+        <label>Год</label>
+        <input type="number" name="year" value="{{if .Item.Year}}{{.Item.Year}}{{end}}" min="1900" max="2100">
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Техника (подставлена по умолчанию — поменяй, если другая)</label>
+        <input type="text" name="technique" value="{{.Technique}}">
+      </div>
+      <div>
+        <label>Размер, см (можно дробные: 14.5)</label>
+        <div class="row">
+          <input type="text" name="w" value="{{.W}}" placeholder="ширина">
+          <input type="text" name="h" value="{{.H}}" placeholder="высота">
+        </div>
+      </div>
+    </div>
+    <label>Разделы галереи</label>
+    <div>
+      {{range .Categories}}
+      <label class="check">
+        <input type="checkbox" name="categories" value="{{.}}"
+               {{if index $.CheckedCats .}}checked{{end}}>
+        {{.}}
+      </label>
+      {{end}}
+    </div>
+    <label class="check"><input type="checkbox" name="available"
+           {{if .Item.Available}}checked{{end}}> в наличии</label>
+    <div class="hint">Недозаполненное (нет техники/размеров/года) — черновик: на сайте
+    показывается «Без названия», пока не дополнишь.</div>
+  </div>
+
+  <div class="panel">
+    <label>Серия (related) — работы, связанные с этой</label>
+    <div class="hint">Ссылки взаимные: отметить здесь — у той работы появится эта, снять — пропадут обе.</div>
+    <input type="text" id="rel-search" placeholder="Поиск по названию…" oninput="filterRel()">
+    <div class="picker" id="rel-picker">
+      {{range .Artworks}}
+      {{if ne .Slug $.Item.Slug}}
+      <label class="check">
+        <input type="checkbox" name="related" value="{{.Slug}}"
+               {{if index $.CheckedRelated .Slug}}checked{{end}}>
+        <img class="thumb" src="/assets/artworks/{{.File}}" alt="" loading="lazy">
+        <span>{{.Title}}{{if .Year}}, {{.Year}}{{end}}</span>
+      </label>
+      {{end}}
+      {{end}}
+    </div>
+  </div>
+
+  <p style="margin-top:20px">
+    <button type="submit">Сохранить</button>
+    <a class="muted" href="/artworks" style="margin-left:16px">отмена</a>
+  </p>
+</form>
+
+{{if .IsEdit}}
+<form method="POST" action="/artworks/replace" enctype="multipart/form-data" style="margin-top:28px">
+  <input type="hidden" name="slug" value="{{.Item.Slug}}">
+  <details>
+    <summary>Заменить файл (например, пересканированная картина)</summary>
+    <div class="hint">У работы изменится адрес страницы — он строится от содержимого файла.
+    Все ссылки обновятся автоматически: серия (related), новости. Старый файл удалится.</div>
+    <label>Новый файл (jpg/jpeg/png)</label>
+    <input type="file" name="file" accept=".jpg,.jpeg,.png">
+    <p><button type="submit" class="ghost">Заменить файл</button></p>
+  </details>
+</form>
+{{end}}
+
+<script>
+function filterRel() {
+  const q = document.getElementById('rel-search').value.trim().toLowerCase();
+  document.querySelectorAll('#rel-picker label').forEach(l => {
+    l.style.display = !q || l.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+</script>
+{{end}}

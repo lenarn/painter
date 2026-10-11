@@ -1,0 +1,21 @@
+{{define "content"}}
+<h1>Новости</h1>
+
+{{if .Saved}}<div class="saved">Сохранено. Не забудь пересобрать сайт.</div>{{end}}
+{{if .Note}}<div class="errors" style="color:var(--accent);background:#f7f3ea;border-color:#dcc9a8">{{.Note}}</div>{{end}}
+
+<p><a href="/news/new">+ Новая новость</a></p>
+
+<table>
+  <tr><th>Дата</th><th>Заголовок</th><th>Работы</th><th>Фото</th><th></th></tr>
+  {{range $i, $n := .News}}
+  <tr>
+    <td>{{$n.Date}}</td>
+    <td>{{$n.Title}}</td>
+    <td>{{len $n.Artworks}}</td>
+    <td>{{len $n.Photos}}</td>
+    <td><a href="/news/edit?i={{$i}}">править</a></td>
+  </tr>
+  {{end}}
+</table>
+{{end}}

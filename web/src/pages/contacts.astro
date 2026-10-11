@@ -1,0 +1,65 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Copyright from '../components/Copyright.astro';
+import { fullName } from '../lib/seo';
+import contacts from '../content/contacts.json';
+
+interface ContactLink {
+  label: string;
+  href: string;
+}
+interface ContactSocial {
+  name: string;
+  main: ContactLink;
+  write: ContactLink;
+}
+interface ContactsData {
+  email: string;
+  socials: ContactSocial[];
+}
+
+// Контакты — из content/contacts.json (правится через админку).
+const data = contacts as ContactsData;
+const email = data.email;
+const socials = data.socials;
+---
+
+<Layout
+  title={`Контакты — ${fullName}`}
+  description={`Контакты художника ${fullName}: почта, Telegram, ВКонтакте. Покупка картин и вопросы.`}
+>
+  <section class="section container contacts">
+    <p class="eyebrow">Контакты</p>
+    <h1>Связаться с художником</h1>
+    <p class="muted">Покупка картин и любые вопросы — напишите напрямую. Магазина нет, каждая работа обсуждается индивидуально.</p>
+
+    <div class="contact-grid">
+      <div class="contact-block">
+        <h3>Почта</h3>
+        <a href={`mailto:${email}`} class="contact-link">{email}</a>
+      </div>
+      {socials.map((s) => (
+        <div class="contact-block">
+          <h3>{s.name}</h3>
+          <a href={s.main.href} class="contact-link">{s.main.label}</a>
+          <br />
+          <a href={s.write.href} class="contact-write">{s.write.label}</a>
+        </div>
+      ))}
+    </div>
+
+    <div class="copyright-block">
+      <Copyright />
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .contact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 28px; margin: 32px 0; }
+  .contact-block h3 { font-family: var(--font-sans); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.16em; color: var(--fg-soft); margin-bottom: 10px; font-weight: 600; }
+  .contact-link { font-family: var(--font-serif); font-size: 1.2rem; }
+  .contact-link:hover { color: var(--accent); }
+  .contact-write { font-size: 0.85rem; color: var(--fg-soft); border-bottom: 1px solid var(--line); padding-bottom: 1px; }
+  .contact-write:hover { color: var(--accent); border-color: var(--accent); }
+  .copyright-block { margin-top: 48px; padding-top: 28px; border-top: 1px solid var(--line); }
+</style>

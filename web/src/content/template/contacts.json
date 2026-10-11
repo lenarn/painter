@@ -1,0 +1,16 @@
+{
+  "email": "you@example.com",
+  "socials": [
+    {
+      "name": "Telegram",
+      "main": {
+        "label": "@your_art",
+        "href": "https://t.me/your_art"
+      },
+      "write": {
+        "label": "write to @your_name",
+        "href": "https://t.me/your_name"
+      }
+    }
+  ]
+}

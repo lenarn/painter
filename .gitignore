@@ -1,0 +1,49 @@
+# --- build artifacts ---
+web/dist/
+web/.astro/
+web/node_modules/
+
+# --- binaries and runtime ---
+tools/admin/admin.exe
+catalogimport.exe
+*.pid
+tmp/
+
+# --- deploy archives ---
+publish/
+
+# --- personal artwork scans (originals; not published) ---
+web/src/assets/artworks/
+web/src/assets/news/
+web/src/assets/about/
+
+# --- personal content (see web/src/content/template/) ---
+web/src/content/*.json
+web/src/content/*.bak
+
+# --- working folders (not part of the site) ---
+reports/
+posts/
+exhibitions/
+lectures/
+news/
+.claude/
+CLAUDE.md
+
+# --- scan source folders (imported via tools/catalogimport) ---
+/родные просторы/
+/портреты/
+/цветы/
+/жанровые/
+/городской романс/
+/за морями за горами/
+/натюрморты/
+/графика/
+/иллюстрации/
+/копии/
+
+# --- stray local files ---
+/font_on-main_page.PNG
+/photo1.jpg
+/web/src/pages/fonts.astro
+/web/npm

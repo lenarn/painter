@@ -1,0 +1,21 @@
+{{define "content"}}
+<h1>Образование</h1>
+
+{{if .Saved}}<div class="saved">Сохранено. Не забудь пересобрать сайт.</div>{{end}}
+
+<p><a href="/education/new">+ Новая запись</a></p>
+
+<table>
+  <tr><th>Период</th><th>Название</th><th>Место</th></tr>
+  {{range .Items}}
+  <tr>
+    <td><a href="/education/edit?i={{.I}}">{{.Period}}</a></td>
+    <td>
+      <a href="/education/edit?i={{.I}}"><b>{{.Title}}</b></a>
+      {{if .Highlight}}<span class="badge badge-ok">выделено</span>{{end}}
+    </td>
+    <td>{{.Place}}</td>
+  </tr>
+  {{end}}
+</table>
+{{end}}

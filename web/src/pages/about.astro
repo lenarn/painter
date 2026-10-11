@@ -1,0 +1,87 @@
+---
+import Layout from '../layouts/Layout.astro';
+import photo1 from '../assets/about/photo1.jpg';
+import { aboutData, educationData } from '../lib/content';
+import { fullName, ogImageSrc } from '../lib/seo';
+const memberships = aboutData.memberships ?? [];
+const membershipLine = memberships.map((m) => `${m.title} с ${m.year} г.`).join(', ');
+const og = await ogImageSrc(photo1);
+---
+
+<Layout
+  title={`Об авторе — ${fullName}`}
+  description={`Художник ${fullName}. Живопись, графика${membershipLine ? `. ${membershipLine}` : '.'}`}
+  image={og}
+>
+  <section class="section container about">
+    <h1>Об авторе</h1>
+
+    <div class="about-split">
+      <figure class="portrait">
+        <img src={photo1.src} width={photo1.width} height={photo1.height} alt="Портрет автора" />
+      </figure>
+      <div class="bio">
+        {aboutData.intro.map((p) => <p>{p}</p>)}
+      </div>
+    </div>
+
+    <section class="about-edu">
+      <h2>Образование</h2>
+      <ul class="edu-list">
+        {educationData.map((e) => (
+          <li>
+            <span class="edu-period">{e.period}</span>
+            <div>
+              <div class:list={['edu-title', { bold: e.highlight }]}>{e.title}</div>
+              {e.place ? <div class="edu-place muted">{e.place}</div> : null}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    {memberships.length > 0 && (
+      <section class="about-members">
+        <h2>Творческие союзы</h2>
+        <ul class="members-list">
+          {memberships.map((m) => (
+            <li>
+              <span class="m-title">{m.title}</span>
+              <span class="m-year muted">с {m.year} г.</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+
+    <p class="expo-link"><a href="/exhibitions">Все выставки →</a></p>
+  </section>
+</Layout>
+
+<style>
+  .about-split { display: grid; grid-template-columns: 320px 1fr; gap: 48px; align-items: start; margin-bottom: 56px; }
+  @media (max-width: 720px) { .about-split { grid-template-columns: 1fr; } }
+  .portrait { margin: 0; }
+  .portrait img { width: 100%; height: auto; border: 1px solid var(--line); padding: 10px; background: var(--frame); box-shadow: var(--frame-shadow); }
+  .bio { font-size: 1.05rem; }
+
+  .about-edu { margin-bottom: 40px; }
+  .about-edu h2 { margin-bottom: 0.5em; }
+  .edu-list { list-style: none; margin: 24px 0 0; padding: 0; }
+  .edu-list li { display: grid; grid-template-columns: 190px 1fr; gap: 24px; padding: 18px 0; border-bottom: 1px solid var(--line); }
+  .edu-period { color: var(--fg-soft); font-variant-numeric: tabular-nums; font-size: 0.9rem; }
+  .edu-title { font-family: var(--font-serif); font-size: 1.1rem; }
+  .edu-title.bold { font-weight: 700; }
+  @media (max-width: 560px) { .edu-list li { grid-template-columns: 1fr; gap: 4px; } }
+
+  .about-members { margin-bottom: 40px; }
+  .about-members h2 { margin-bottom: 0.5em; }
+  .members-list { list-style: none; margin: 20px 0 0; padding: 0; display: grid; gap: 14px; }
+  .members-list li { display: flex; align-items: baseline; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+  .m-title { font-family: var(--font-serif); font-size: 1.1rem; }
+  .m-year { font-size: 0.9rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  .expo-link { margin-top: 8px; }
+  .expo-link a { border-bottom: 1px solid var(--line); padding-bottom: 2px; }
+  .expo-link a:hover { color: var(--accent); }
+</style>

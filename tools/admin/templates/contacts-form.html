@@ -1,0 +1,95 @@
+{{define "content"}}
+<h1>Контакты</h1>
+
+{{if .Saved}}<div class="saved">Сохранено. Не забудь пересобрать сайт.</div>{{end}}
+{{if .Errors}}
+<div class="errors">
+  {{range .Errors}}<div>• {{.}}</div>{{end}}
+</div>
+{{end}}
+
+<form method="POST" action="/contacts/save" enctype="multipart/form-data">
+  <div class="panel">
+    <label>Почта</label>
+    <input type="email" name="email" value="{{.Data.Email}}" required>
+    <div class="hint">Письмо — основной канал для покупки картин и вопросов.</div>
+  </div>
+
+  <h2>Соцсети</h2>
+  <input type="hidden" name="soc_count" id="soc-count" value="{{len .Data.Socials}}">
+  <div id="soc-rows">
+    {{range $i, $s := .Data.Socials}}
+    <div class="soc-card">
+      <div class="soc-card-head">
+        <label>Название</label>
+        <button type="button" class="ghost del-row" title="убрать соцсеть">убрать</button>
+      </div>
+      <input type="text" name="soc_name_{{$i}}" value="{{$s.Name}}" placeholder="Telegram">
+
+      <div class="soc-card-group">
+        <div class="soc-card-title">Публичный адрес (канал / группа)</div>
+        <label>Подпись ссылки — как показывается на странице</label>
+        <input type="text" name="soc_main_label_{{$i}}" value="{{$s.Main.Label}}" placeholder="@eromanova_art">
+        <label>Адрес</label>
+        <input type="text" name="soc_main_href_{{$i}}" value="{{$s.Main.Href}}" placeholder="https://t.me/…">
+      </div>
+
+      <div class="soc-card-group">
+        <div class="soc-card-title">Для личных сообщений</div>
+        <label>Подпись ссылки — как показывается на странице</label>
+        <input type="text" name="soc_write_label_{{$i}}" value="{{$s.Write.Label}}" placeholder="написать @elenaromn">
+        <label>Адрес</label>
+        <input type="text" name="soc_write_href_{{$i}}" value="{{$s.Write.Href}}" placeholder="https://t.me/…">
+      </div>
+    </div>
+    {{end}}
+  </div>
+
+  <p><button type="button" class="ghost" onclick="addSocRow()">+ соцсеть</button></p>
+  <p style="margin-top:20px"><button type="submit">Сохранить</button></p>
+</form>
+
+<script>
+function addSocRow() {
+  const rows = document.getElementById('soc-rows');
+  const n = +document.getElementById('soc-count').value;
+  // Карточка-шаблон из <template>: имена полей подставляются по индексу.
+  const div = document.getElementById('soc-tpl').content.firstElementChild.cloneNode(true);
+  div.querySelectorAll('input').forEach(inp => {
+    inp.name = inp.dataset.field + '_' + n;
+  });
+  div.querySelector('.del-row').onclick = delRow;
+  rows.appendChild(div);
+  document.getElementById('soc-count').value = n + 1;
+  div.querySelector('input').focus();
+}
+function delRow(e) { e.target.closest('.mem-row, .soc-card').remove(); }
+document.querySelectorAll('.soc-card .del-row').forEach(b => b.onclick = delRow);
+</script>
+
+<template id="soc-tpl">
+  <div class="soc-card">
+    <div class="soc-card-head">
+      <label>Название</label>
+      <button type="button" class="ghost del-row" title="убрать соцсеть">убрать</button>
+    </div>
+    <input type="text" data-field="soc_name" placeholder="Telegram">
+
+    <div class="soc-card-group">
+      <div class="soc-card-title">Публичный адрес (канал / группа)</div>
+      <label>Подпись ссылки — как показывается на странице</label>
+      <input type="text" data-field="soc_main_label" placeholder="@eromanova_art">
+      <label>Адрес</label>
+      <input type="text" data-field="soc_main_href" placeholder="https://t.me/…">
+    </div>
+
+    <div class="soc-card-group">
+      <div class="soc-card-title">Для личных сообщений</div>
+      <label>Подпись ссылки — как показывается на странице</label>
+      <input type="text" data-field="soc_write_label" placeholder="написать @elenaromn">
+      <label>Адрес</label>
+      <input type="text" data-field="soc_write_href" placeholder="https://t.me/…">
+    </div>
+  </div>
+</template>
+{{end}}

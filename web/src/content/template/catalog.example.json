@@ -1,0 +1,27 @@
+{
+  "artworks": [
+    {
+      "slug": "artwork-0000000000",
+      "file": "artwork-0000000000.jpg",
+      "categories": ["landscapes"],
+      "needs_metadata": false,
+      "title": "Morning in the meadow",
+      "year": 2026,
+      "technique": "canvas, oil",
+      "dimensions": { "w": 50, "h": 70, "unit": "cm" },
+      "caption": "A short caption shown under the artwork.",
+      "alt": "Describe the image for people using screen readers",
+      "featured": true,
+      "available": true,
+      "sort": { "landscapes": 1 },
+      "related": ["artwork-1111111111"],
+      "seriesOrder": 1
+    },
+    {
+      "slug": "artwork-1111111111",
+      "file": "artwork-1111111111.jpg",
+      "categories": ["landscapes", "studies"],
+      "needs_metadata": true
+    }
+  ]
+}

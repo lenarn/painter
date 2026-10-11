@@ -1,0 +1,77 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { exhibitionsData } from '../lib/content';
+import { fullName } from '../lib/seo';
+
+// Группировка по году (годы в обратном порядке — свежие сверху).
+const grouped = new Map<number, typeof exhibitionsData>();
+for (const e of exhibitionsData) {
+  const list = grouped.get(e.year) ?? [];
+  list.push(e);
+  grouped.set(e.year, list);
+}
+const years = Array.from(grouped.keys()).sort((a, b) => b - a);
+const yearsLine = years.length > 0 ? ` за ${Math.min(...years)}–${Math.max(...years)} годы` : '';
+---
+
+<Layout
+  title={`Выставки — ${fullName}`}
+  description={`Выставки художника ${fullName}: персональные и групповые${yearsLine}.`}
+>
+  <section class="section container">
+    <p class="eyebrow">Выставки</p>
+    <h1>Хронология выставок</h1>
+    <p class="muted">Персональные и групповые. Список пополняется.</p>
+
+    {years.length === 0 ? (
+      <p class="muted">Записей пока нет.</p>
+    ) : (
+      <ol class="timeline">
+        {years.map((year) => (
+          <li class="tl-year">
+            <h2 class="tl-year-head">{year}</h2>
+            <ul class="tl-items">
+              {grouped.get(year)!.map((e) => (
+                <li class="tl-item">
+                  <span class="tl-period">{e.period}</span>
+                  <div class="tl-body">
+                    <div class="tl-title">{e.title}</div>
+                    {e.place && <div class="tl-place muted">{e.place}</div>}
+                    {e.note && <p class="tl-note muted">{e.note}</p>}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </li>
+        ))}
+      </ol>
+    )}
+  </section>
+</Layout>
+
+<style>
+  .timeline { list-style: none; margin: 40px 0 0; padding: 0; }
+  .tl-year { padding-block: 20px; border-top: 1px solid var(--line); }
+  .tl-year:last-child { border-bottom: 1px solid var(--line); }
+  .tl-year-head {
+    font-size: clamp(1.6rem, 3.5vw, 2.1rem);
+    margin: 0 0 18px;
+    color: var(--fg);
+    font-variant-numeric: tabular-nums;
+  }
+  .tl-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 22px; }
+  .tl-item { display: grid; grid-template-columns: 180px 1fr; gap: 24px; }
+  .tl-period {
+    font-size: 0.9rem;
+    color: var(--fg-soft);
+    font-variant-numeric: tabular-nums;
+    padding-top: 3px;
+  }
+  .tl-title { font-family: var(--font-serif); font-size: 1.2rem; }
+  .tl-place { font-size: 0.95rem; margin-top: 2px; }
+  .tl-note { font-size: 0.95rem; margin: 8px 0 0; max-width: 60ch; }
+  @media (max-width: 560px) {
+    .tl-item { grid-template-columns: 1fr; gap: 4px; }
+    .tl-period { padding-top: 0; }
+  }
+</style>

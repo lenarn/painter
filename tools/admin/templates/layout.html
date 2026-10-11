@@ -1,0 +1,151 @@
+{{define "layout.html"}}<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Админка — Елена Романова</title>
+<style>
+  :root {
+    --bg: #f6f5f3; --panel: #ffffff; --fg: #15130f; --soft: #6b6760;
+    --line: #e7e4df; --accent: #8a6a3a; --err: #a83c3c; --ok: #3c6e46;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+         font: 15px/1.6 "Segoe UI", system-ui, sans-serif; }
+  header { background: var(--panel); border-bottom: 1px solid var(--line);
+           padding: 14px 28px; display: flex; align-items: baseline; gap: 28px; }
+  header a { color: var(--soft); text-decoration: none; font-size: 14px; }
+  header a.active, header a:hover { color: var(--accent); }
+  header .brand { font-size: 17px; color: var(--fg); font-weight: 600; }
+  main { max-width: 960px; margin: 0 auto; padding: 28px; }
+  h1 { font-size: 24px; margin: 0 0 20px; }
+  h2 { font-size: 17px; margin: 28px 0 12px; }
+  .panel { background: var(--panel); border: 1px solid var(--line);
+           border-radius: 6px; padding: 20px 24px; margin-bottom: 20px; }
+  label { display: block; font-size: 13px; color: var(--soft); margin: 12px 0 4px; }
+  input[type=text], input[type=date], input[type=number], textarea, select {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 4px;
+    font: inherit; background: #fff; }
+  textarea { min-height: 180px; resize: vertical; }
+  input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 0;
+                                border-color: var(--accent); }
+  .row { display: flex; gap: 16px; } .row > * { flex: 1; }
+  .check { display: inline-flex; align-items: center; gap: 6px; margin: 3px 14px 3px 0;
+           font-size: 14px; color: var(--fg); }
+  .check input { width: auto; }
+  button { padding: 9px 20px; border: 1px solid var(--fg); border-radius: 4px;
+           background: var(--fg); color: #fff; font: inherit; cursor: pointer; }
+  button.ghost { background: none; color: var(--fg); }
+  button:hover { border-color: var(--accent); background: var(--accent); color: #fff; }
+  button.ghost:hover { color: var(--accent); }
+  .errors { background: #f7ecec; border: 1px solid #d9b8b8; color: var(--err);
+            border-radius: 4px; padding: 10px 14px; margin-bottom: 16px; }
+  .saved { background: #ecf2ed; border: 1px solid #b8d0be; color: var(--ok);
+           border-radius: 4px; padding: 10px 14px; margin-bottom: 16px; }
+  table { width: 100%; border-collapse: collapse; background: var(--panel);
+          border: 1px solid var(--line); border-radius: 6px; }
+  th, td { text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--line);
+           font-size: 14px; }
+  th { color: var(--soft); font-weight: 500; font-size: 13px; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #faf9f7; }
+  .muted { color: var(--soft); font-size: 13px; }
+  .hint { color: var(--soft); font-size: 12.5px; margin-top: 4px; }
+  details { border: 1px solid var(--line); border-radius: 6px; background: var(--panel);
+            padding: 12px 18px; margin: 16px 0; }
+  details summary { cursor: pointer; font-weight: 600; }
+  details[open] summary { margin-bottom: 8px; }
+  .picker { max-height: 260px; overflow: auto; border: 1px solid var(--line);
+            border-radius: 4px; padding: 8px 12px; background: #fff; }
+  .picker .check { align-items: flex-start; }
+  .thumb { width: 56px; height: 42px; object-fit: cover; border-radius: 3px;
+           flex: none; background: #eee; }
+  .cal { display: none; position: absolute; z-index: 10; top: calc(100% + 4px); left: 0;
+         width: 240px; background: #fff; border: 1px solid var(--line); border-radius: 6px;
+         box-shadow: 0 4px 16px rgba(0,0,0,.12); padding: 10px 12px; }
+  .cal-head { display: flex; justify-content: space-between; align-items: center;
+              margin-bottom: 6px; }
+  .cal-head b { font-size: 14px; }
+  .cal-head a { color: var(--accent); text-decoration: none; font-size: 17px; padding: 0 8px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
+  .cal-dow { font-size: 12px; color: var(--soft); padding: 2px 0; }
+  .cal-day { padding: 4px 0; font-size: 13.5px; text-decoration: none; color: var(--fg);
+             border-radius: 3px; }
+  .cal-day:hover { background: #f0ece4; }
+  .cal-today { font-weight: 600; color: var(--accent); }
+  .cal-sel { background: var(--accent); color: #fff; }
+  .cal-foot { margin-top: 6px; text-align: center; }
+  .cal-foot a { color: var(--accent); font-size: 13px; text-decoration: none; }
+  .art-row { display: flex; align-items: flex-start; gap: 12px; padding: 8px 4px;
+             border-bottom: 1px solid var(--line); }
+  .art-row:last-child { border-bottom: none; }
+  .art-info a { color: var(--fg); text-decoration: none; }
+  .art-info a:hover { color: var(--accent); }
+  .badge { display: inline-block; font-size: 11.5px; color: var(--soft);
+           border: 1px solid var(--line); border-radius: 10px; padding: 1px 8px;
+           margin-left: 8px; vertical-align: 1px; }
+  .badge-ok { color: var(--ok); border-color: #b8d0be; }
+  .mem-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0;
+             align-items: flex-start; }
+  .mem-row input { flex: 1; min-width: 0; }
+  .mem-row input[type=number] { flex: none; max-width: 100px; }
+  .mem-row .del-row { flex: none; padding: 6px 14px; }
+  .build-out { background: #fff; border: 1px solid var(--line); border-radius: 4px;
+               padding: 12px 16px; font: 12.5px/1.5 Consolas, monospace;
+               max-height: 420px; overflow: auto; white-space: pre-wrap;
+               word-break: break-word; margin: 8px 0 0; }
+  a.act { display: inline-block; padding: 9px 20px; border: 1px solid var(--fg);
+          border-radius: 4px; background: var(--fg); color: #fff;
+          text-decoration: none; font: inherit; }
+  a.act:hover { border-color: var(--accent); background: var(--accent); color: #fff; }
+  .soc-card { border: 1px solid var(--line); border-radius: 6px; background: #fff;
+              padding: 16px 20px; margin-bottom: 16px; }
+  .soc-card-head { display: flex; justify-content: space-between;
+                   align-items: baseline; }
+  .soc-card-head .del-row { padding: 4px 12px; font-size: 13px; }
+  .soc-card-group { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line); }
+  .soc-card-title { font-size: 12px; text-transform: uppercase; letter-spacing: .08em;
+                    color: var(--accent); font-weight: 600; margin-bottom: 4px; }
+  .edit-preview img { display: block; max-width: 320px; max-height: 260px;
+                      width: auto; height: auto; border: 1px solid var(--line);
+                      border-radius: 3px; background: #fff; margin-bottom: 6px; }
+  .linked { display: flex; flex-wrap: wrap; gap: 16px; }
+  .linked img { display: block; width: 200px; height: auto; max-height: 240px;
+                object-fit: contain; border: 1px solid var(--line); background: #fff; }
+  .linked-title { font-size: 13px; color: var(--soft); max-width: 200px; }
+  .spell-box { margin-top: 12px; }
+  .spell-item { margin: 4px 0; font-size: 14px; }
+  .spell-word { color: var(--err); font-weight: 600; }
+  .spell-sug { color: var(--accent); cursor: pointer; border-bottom: 1px dotted var(--accent);
+               margin-left: 6px; }
+  .spell-sug:hover { color: var(--fg); }
+  .cards { display: flex; gap: 16px; }
+  .card { flex: 1; background: var(--panel); border: 1px solid var(--line);
+          border-radius: 6px; padding: 18px 22px; }
+  .card b { font-size: 26px; display: block; }
+  footer { max-width: 960px; margin: 40px auto 20px; padding: 0 28px;
+           color: var(--soft); font-size: 12px; }
+  footer a { color: var(--soft); }
+</style>
+</head>
+<body>
+<header>
+  <span class="brand">Админка</span>
+  <a href="/" class="{{if eq .Page "dashboard"}}active{{end}}">Главная</a>
+  <a href="/news" class="{{if eq .Page "news"}}active{{end}}">Новости</a>
+  <a href="/artworks" class="{{if eq .Page "artworks"}}active{{end}}">Картины</a>
+  <a href="/about" class="{{if eq .Page "about"}}active{{end}}">Об авторе</a>
+  <a href="/exhibitions" class="{{if eq .Page "exhibitions"}}active{{end}}">Выставки</a>
+  <a href="/education" class="{{if eq .Page "education"}}active{{end}}">Образование</a>
+  <a href="/contacts" class="{{if eq .Page "contacts"}}active{{end}}">Контакты</a>
+  <a href="/publish" class="{{if eq .Page "publish"}}active{{end}}">Сборка</a>
+</header>
+<main>
+{{template "content" .}}
+</main>
+<footer>
+  Данные: web/src/content/*.json — перед записью создаётся .bak. Удалений в админке нет.
+  Проверка правописания: <a href="https://yandex.ru/dev/speller">Яндекс.Спеллер</a>.
+</footer>
+</body>
+</html>{{end}}

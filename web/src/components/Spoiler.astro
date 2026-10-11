@@ -1,0 +1,37 @@
+---
+// Спойлер на нативном <details> — без JS.
+interface Props { summary: string; open?: boolean }
+const { summary, open = false } = Astro.props;
+---
+
+<details class="spoiler" open={open}>
+  <summary>{summary}</summary>
+  <div class="spoiler-body"><slot /></div>
+</details>
+
+<style>
+  .spoiler {
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    padding-block: 18px;
+  }
+  .spoiler summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-serif);
+    font-size: 1.15rem;
+  }
+  .spoiler summary::-webkit-details-marker { display: none; }
+  .spoiler summary::after {
+    content: '+';
+    font-size: 1.4rem;
+    font-weight: 300;
+    color: var(--fg-soft);
+    transition: transform 0.2s ease;
+  }
+  .spoiler[open] summary::after { content: '−'; }
+  .spoiler-body { padding-top: 18px; }
+</style>

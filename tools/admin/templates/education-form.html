@@ -1,0 +1,37 @@
+{{define "content"}}
+<h1>{{if ge .Index 0}}Правка записи образования{{else}}Новое образование{{end}}</h1>
+
+{{if .Errors}}
+<div class="errors">
+  {{range .Errors}}<div>• {{.}}</div>{{end}}
+</div>
+{{end}}
+
+<form method="POST" action="/education/save" enctype="multipart/form-data">
+  <input type="hidden" name="i" value="{{.Index}}">
+
+  <div class="panel">
+    <div class="row">
+      <div>
+        <label>Период (как на сайте)</label>
+        <input type="text" name="period" value="{{.Item.Period}}" placeholder="сен 2025 – май 2026" required>
+      </div>
+      <div style="max-width:160px">
+        <label>Сортировка — месяц начала</label>
+        <input type="text" name="sortStart" value="{{.Item.SortStart}}" placeholder="2025-09" required>
+      </div>
+    </div>
+    <label>Название курса/программы</label>
+    <input type="text" name="title" value="{{.Item.Title}}" spellcheck="true" required>
+    <label>Место</label>
+    <input type="text" name="place" value="{{.Item.Place}}" spellcheck="true">
+    <label class="check"><input type="checkbox" name="highlight"
+           {{if .Item.Highlight}}checked{{end}}> выделить жирным (диплом, ДПО, повышение квалификации)</label>
+  </div>
+
+  <p style="margin-top:20px">
+    <button type="submit">Сохранить</button>
+    <a class="muted" href="/education" style="margin-left:16px">отмена</a>
+  </p>
+</form>
+{{end}}

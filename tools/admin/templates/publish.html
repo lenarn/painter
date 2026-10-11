@@ -1,0 +1,66 @@
+{{define "content"}}
+<h1>Сборка</h1>
+
+{{if .Busy}}
+<div class="errors">Сейчас идёт сборка или архив — дождись окончания
+(страницу можно обновить, статус снимется сам).</div>
+{{end}}
+
+{{if .Result.Title}}
+<div class="{{if .Result.OK}}saved{{else}}errors{{end}}">
+  {{if .Result.OK}}Готово{{else}}Не получилось{{end}} — {{.Result.Title}} ({{.Result.Seconds}}).
+  {{if .Result.Path}}<br>
+  Архив: <code>{{.Result.Path}}</code> ({{.Result.Size}}).{{end}}
+  {{if .Result.Hint}}<br>
+  {{.Result.Hint}}{{end}}
+</div>
+{{end}}
+
+<div class="panel">
+  <label>Превью собранного сайта</label>
+  {{if .Preview.Running}}
+  <div class="hint">Работает: <a href="{{.PreviewURL}}" target="_blank">{{.PreviewURL}}</a> —
+    открывается в новой вкладке; после каждой сборки достаточно обновить страницу.</div>
+  {{if .Preview.Ours}}
+  <form method="POST" action="/publish/preview-stop">
+    <p><button type="submit" class="ghost">Остановить превью</button></p>
+  </form>
+  {{else}}
+  <div class="hint">Порт 4321 сейчас занят процессом не из админки —
+    кнопка ниже его погасит и запустит превью заново.</div>
+  <p><a class="act" href="/publish/preview" target="_blank">Запустить заново и открыть сайт</a></p>
+  {{end}}
+  {{else}}
+  <div class="hint">Не запущено. Запуск погасит всё, что занимает порт 4321,
+    и откроет собранный сайт.</div>
+  <p><a class="act" href="/publish/preview" target="_blank">Запустить и открыть сайт</a></p>
+  {{end}}
+</div>
+
+<div class="panel">
+  <form method="POST" action="/publish/build">
+    <label>Собрать сайт</label>
+    <div class="hint">npm run build → web/dist. Занимает ~40 секунд.
+    Результат — число страниц и хвост вывода сборки.</div>
+    <p><button type="submit">Собрать сайт</button></p>
+  </form>
+</div>
+
+<div class="panel">
+  <form method="POST" action="/publish/archive">
+    <label>Архив для заливки</label>
+    <div class="hint">Соберёт сайт свежим, сравнит с предыдущим архивом
+    (что нового/изменённого/удалённого) и создаст publish/site-&lt;дата&gt;.zip.
+    Занимает несколько минут. Заливка на Beget — по-прежнему вручную
+    через панель.</div>
+    <p><button type="submit">Собрать архив</button></p>
+  </form>
+</div>
+
+{{if .Result.Title}}
+<div class="panel">
+  <label>Вывод операции «{{.Result.Title}}»</label>
+  <pre class="build-out">{{.Result.Output}}</pre>
+</div>
+{{end}}
+{{end}}

@@ -1,0 +1,38 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import GalleryGrid from '../../components/GalleryGrid.astro';
+import { loadCatalog, availableArtworks, resolveImage } from '../../lib/catalog';
+import { fullName, ogImageSrc } from '../../lib/seo';
+
+// Сквозной раздел «В наличии»: все работы с флагом available из любых
+// тематических разделов (порядок — в availableArtworks, он же действует
+// при листании с этого раздела).
+const arts = loadCatalog();
+const available = availableArtworks(arts);
+const count = available.length;
+const works = count === 1 ? 'работа' : count < 5 ? 'работы' : 'работ';
+const ogImage = await ogImageSrc(resolveImage(available[0]));
+---
+
+<Layout
+  title={`В наличии — Галерея — ${fullName}`}
+  description={`Картины художника ${fullName}, доступные к покупке: ${count} ${works} — живопись, графика.`}
+  image={ogImage}
+>
+  <section class="section container">
+    <nav class="crumbs" aria-label="Хлебные крошки">
+      <a href="/gallery">Галерея</a>
+      <span>/</span>
+      <span>В наличии</span>
+    </nav>
+    <h1>В наличии</h1>
+    <p class="muted">{count} {works}</p>
+
+    {count > 0 && <GalleryGrid arts={available} eager={true} from="v-nalichii" />}
+  </section>
+</Layout>
+
+<style>
+  .crumbs { font-size: 0.8rem; color: var(--fg-soft); margin-bottom: 24px; display: flex; gap: 8px; }
+  .crumbs a:hover { color: var(--accent); }
+</style>

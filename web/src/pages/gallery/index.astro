@@ -1,0 +1,47 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { loadCatalog, categoriesWithCounts, categoryHref, resolveImage, featuredArtworks } from '../../lib/catalog';
+import { fullName, ogImageSrc } from '../../lib/seo';
+
+const arts = loadCatalog();
+const categories = categoriesWithCounts(arts);
+const availableCount = arts.filter((a) => a.available).length;
+const ogImage = await ogImageSrc(resolveImage(featuredArtworks(arts)[0]));
+---
+
+<Layout
+  title={`Галерея — ${fullName}`}
+  description={`Галерея художника ${fullName}: ${arts.length} работ в ${categories.length} разделах — живопись, графика, иллюстрации, копии.`}
+  image={ogImage}
+>
+  <section class="section container">
+    <h1>Галерея</h1>
+
+    <div class="cat-grid">
+      <a href="/gallery/v-nalichii" class="cat-card">
+        <span class="cat-name">В наличии</span>
+        <span class="cat-count">{availableCount} работ</span>
+      </a>
+      {categories.map((c) => (
+        <a href={categoryHref(c.name)} class="cat-card">
+          <span class="cat-name">{c.name}</span>
+          <span class="cat-count">{c.count} работ</span>
+        </a>
+      ))}
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; margin-top: 36px; }
+  .cat-card {
+    display: flex; flex-direction: column; justify-content: space-between; gap: 24px;
+    padding: 32px; min-height: 160px;
+    border: 1px solid var(--line); border-radius: var(--radius);
+    background: var(--bg-soft);
+    transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+  }
+  .cat-card:hover { border-color: var(--fg); transform: translateY(-3px); background: #fff; }
+  .cat-name { font-family: var(--font-serif); font-size: 1.4rem; }
+  .cat-count { font-size: 0.8rem; color: var(--fg-soft); }
+</style>

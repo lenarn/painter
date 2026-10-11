@@ -1,0 +1,40 @@
+{{define "content"}}
+<h1>{{if ge .Index 0}}Правка записи выставки{{else}}Новая выставка{{end}}</h1>
+
+{{if .Errors}}
+<div class="errors">
+  {{range .Errors}}<div>• {{.}}</div>{{end}}
+</div>
+{{end}}
+
+<form method="POST" action="/exhibitions/save" enctype="multipart/form-data">
+  <input type="hidden" name="i" value="{{.Index}}">
+
+  <div class="panel">
+    <div class="row">
+      <div style="max-width:120px">
+        <label>Год</label>
+        <input type="number" name="year" value="{{.Item.Year}}" min="1990" max="2100" required>
+      </div>
+      <div>
+        <label>Период (как на сайте)</label>
+        <input type="text" name="period" value="{{.Item.Period}}" placeholder="сен 2026 / 24.01 — 25.02.2024" required>
+      </div>
+    </div>
+    <label>Сортировка внутри года — дата начала, вид 2026-09-01</label>
+    <input type="text" name="sortStart" value="{{.Item.SortStart}}" placeholder="{{.Item.Year}}-01-01">
+    <div class="hint">Пустое поле у новой записи — встанет первой строкой снизу в своём году.</div>
+    <label>Название выставки</label>
+    <input type="text" name="title" value="{{.Item.Title}}" spellcheck="true" required>
+    <label>Место проведения</label>
+    <input type="text" name="place" value="{{.Item.Place}}" spellcheck="true">
+    <label>Примечание (необязательно)</label>
+    <textarea name="note" style="min-height:80px" spellcheck="true">{{.Item.Note}}</textarea>
+  </div>
+
+  <p style="margin-top:20px">
+    <button type="submit">Сохранить</button>
+    <a class="muted" href="/exhibitions" style="margin-left:16px">отмена</a>
+  </p>
+</form>
+{{end}}

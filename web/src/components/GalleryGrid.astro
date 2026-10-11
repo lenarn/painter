@@ -1,0 +1,189 @@
+---
+import ArtworkCard from './ArtworkCard.astro';
+import { getImage } from 'astro:assets';
+import { type Artwork, resolveImage, titleFor, captionFor } from '../lib/catalog';
+
+interface Props { arts: Artwork[]; eager?: boolean; from?: string }
+const { arts, eager = false, from = '' } = Astro.props;
+
+// Формат работы: пропорция реального изображения, фолбэк 4:5.
+const aspectOf = (art: Artwork): number => {
+  const img = resolveImage(art);
+  return img && img.width && img.height ? img.width / img.height : 0.8;
+};
+
+// Строки одинаковой высоты: карточки идут рядами по 3, ширина карточки
+// в ряду пропорциональна формату картины (Google-Photos-подход).
+// Порядок чтения совпадает с порядком сортировки: слева направо, сверху вниз.
+const ROW = 3;
+const rows: Artwork[][] = [];
+for (let i = 0; i < arts.length; i += ROW) rows.push(arts.slice(i, i + ROW));
+
+// Лайтбокс раздела: список работ сетки в порядке чтения; крупный WebP —
+// те же варианты, что у страниц работ (getImage кэшируется по хэшу,
+// новых файлов почти не добавляется).
+const lbSrc = async (a: Artwork): Promise<string | undefined> => {
+  const m = resolveImage(a);
+  if (!m) return undefined;
+  return (await getImage({ src: m, width: Math.min(1640, m.width), format: 'webp' })).src;
+};
+const lbItems = await Promise.all(
+  arts.map(async (a) => ({
+    src: await lbSrc(a),
+    title: titleFor(a),
+    alt: a.alt ?? captionFor(a),
+    slug: a.slug,
+  })),
+);
+// from кладём в данные: подпись в лайтбоксе ведёт на страницу работы
+// с сохранением раздела (листание там продолжится по нему же).
+const lbData = JSON.stringify({ items: lbItems, from });
+---
+
+<div class="rows">
+  {rows.map((row, rowIdx) => (
+    <div class="row">
+      {row.map((art, i) => (
+        <div class="cell" style={`--ar: ${aspectOf(art).toFixed(4)}`}>
+          {/* eager — только первому ряду: видимые ленивые картинки браузер
+              и так грузит немедленно, а LCP-картинке не приходится ждать
+              в очереди из 16–30 одновременных загрузок всего раздела.
+              Первая карточка дополнительно помечена fetchpriority=high. */}
+          <ArtworkCard
+            art={art}
+            eager={eager && rowIdx === 0}
+            priority={eager && rowIdx === 0 && i === 0}
+            from={from}
+            index={rowIdx * ROW + i}
+          />
+        </div>
+      ))}
+      {row.length < ROW && Array.from({ length: ROW - row.length }).map(() => (
+        <div class="cell spacer" style="--ar: 0.8" aria-hidden="true" />
+      ))}
+    </div>
+  ))}
+</div>
+
+{/* Данные лайтбокса: работы раздела в порядке сетки. */}
+<script type="application/json" id="grid-lightbox-data" set:html={lbData} />
+
+<div class="lightbox" id="grid-lightbox" role="dialog" aria-modal="true" aria-label="Просмотр работы" hidden>
+  <div class="lb-backdrop" data-lb-close></div>
+  <button class="lb-btn lb-close" type="button" aria-label="Закрыть" data-lb-close>✕</button>
+  <button class="lb-btn lb-prev" type="button" aria-label="Предыдущая работа" data-lb-prev>←</button>
+  <figure class="lb-figure">
+    <img class="lb-img" alt="" />
+    <figcaption><a class="lb-caption"></a></figcaption>
+  </figure>
+  <button class="lb-btn lb-next" type="button" aria-label="Следующая работа" data-lb-next>→</button>
+</div>
+
+<script>
+  // Лайтбокс сетки раздела: клик по картинке карточки открывает крупный
+  // просмотр, стрелки листают работы раздела в порядке сетки. Клик по
+  // названию карточки и переходы с модификаторами (Cmd/Ctrl/Shift —
+  // новая вкладка) остаются браузеру.
+  const dataEl = document.getElementById('grid-lightbox-data');
+  const lb = document.getElementById('grid-lightbox');
+  if (dataEl && lb) {
+    const { items, from }: { items: { src?: string; title: string; alt: string; slug: string }[]; from?: string } =
+      JSON.parse(dataEl.textContent || '{}');
+    const img = lb.querySelector('.lb-img') as HTMLImageElement;
+    const caption = lb.querySelector('.lb-caption') as HTMLAnchorElement;
+    const prevBtn = lb.querySelector('[data-lb-prev]') as HTMLButtonElement;
+    const nextBtn = lb.querySelector('[data-lb-next]') as HTMLButtonElement;
+    const closeBtn = lb.querySelector('.lb-close') as HTMLButtonElement;
+    let current = -1;
+    let lastFocus: HTMLElement | null = null;
+
+    const has = (n: number) => n >= 0 && n < items.length && Boolean(items[n]?.src);
+
+    function show(n: number) {
+      if (!has(n)) return;
+      current = n;
+      const it = items[current];
+      img.src = it.src!;
+      img.alt = it.alt || '';
+      // Подпись — ссылка на страницу работы (раздел сохраняем).
+      if (caption) {
+        caption.textContent = it.title;
+        caption.href = `/artworks/${it.slug}` + (from ? `?from=${encodeURIComponent(from)}` : '');
+      }
+      prevBtn.hidden = !has(current - 1);
+      nextBtn.hidden = !has(current + 1);
+      // Соседей подгружаем заранее — стрелки откликаются мгновенно.
+      for (const nb of [current - 1, current + 1]) {
+        if (has(nb)) { const pre = new Image(); pre.src = items[nb].src!; }
+      }
+    }
+
+    function open(n: number) {
+      if (!has(n)) return;
+      lastFocus = document.activeElement as HTMLElement | null;
+      lb.hidden = false;
+      document.body.style.overflow = 'hidden';
+      show(n);
+      closeBtn.focus();
+    }
+
+    function close() {
+      lb.hidden = true;
+      document.body.style.overflow = '';
+      if (lastFocus) lastFocus.focus();
+    }
+
+    document.querySelectorAll('[data-lb-index]').forEach((el) => {
+      el.addEventListener('click', (e) => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+        const n = Number(el.getAttribute('data-lb-index'));
+        if (!Number.isNaN(n)) open(n);
+      });
+    });
+    lb.querySelectorAll('[data-lb-close]').forEach((el) => el.addEventListener('click', close));
+    prevBtn.addEventListener('click', () => show(current - 1));
+    nextBtn.addEventListener('click', () => show(current + 1));
+    document.addEventListener('keydown', (e) => {
+      if (lb.hidden) return;
+      if (e.key === 'Escape') close();
+      if (e.key === 'ArrowLeft') show(current - 1);
+      if (e.key === 'ArrowRight') show(current + 1);
+      // Фокус-трап: Tab не уходит под оверлей, цикл по кнопкам и подписи.
+      if (e.key === 'Tab') {
+        const list = Array.from(lb.querySelectorAll<HTMLElement>('button:not([hidden]), a[href]'));
+        if (!list.length) return;
+        const idx = list.indexOf(document.activeElement as HTMLElement);
+        const next = e.shiftKey
+          ? idx <= 0 ? list.length - 1 : idx - 1
+          : idx === list.length - 1 ? 0 : idx + 1;
+        e.preventDefault();
+        list[next].focus();
+      }
+    });
+  }
+</script>
+
+<style>
+  .rows {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+  .row {
+    display: flex;
+    gap: 28px;
+  }
+  /* Ширина карточки в ряду пропорциональна её формату; высота у всего
+     ряда одинаковая, т.к. у рамки aspect-ratio = формату картины. */
+  .cell {
+    flex: var(--ar) 1 0;
+    min-width: 0;
+  }
+  .spacer { visibility: hidden; }
+  @media (max-width: 560px) {
+    .row { flex-wrap: wrap; gap: 28px; }
+    .cell { flex: 1 1 100%; }
+    .spacer { display: none; }
+  }
+</style>

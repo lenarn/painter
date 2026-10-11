@@ -1,0 +1,13 @@
+# Кэширование для статики Astro на Beget (Apache 2.4 + nginx).
+# HTML: браузер всегда перепроверяет свежесть (после заливок страницы
+# не «смешиваются» со старыми ассетами).
+# /_astro/*: имена файлов содержат хэш содержимого — при любом
+# изменении имя меняется само, поэтому кэшируем на год без проверок.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(html|xhtml|xml)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+  <If "%{REQUEST_URI} =~ m#^/_astro/#">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </If>
+</IfModule>

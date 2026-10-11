@@ -1,0 +1,13 @@
+{
+  "news": [
+    {
+      "date": "2026-01-15",
+      "title": "Site launched",
+      "text": [
+        "A short news post: what happened and why it matters.",
+        "Each paragraph is a separate string in this array. The newest post is shown first."
+      ],
+      "artworks": []
+    }
+  ]
+}

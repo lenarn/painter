@@ -1,0 +1,312 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { Picture, getImage } from 'astro:assets';
+import { loadCatalog, resolveImage, captionFor, titleFor, dimensionsLabel, metaLine, parseFilename, artworksByCategory, availableArtworks, type Artwork } from '../../lib/catalog';
+import { absUrl, fullName, ogImageSrc } from '../../lib/seo';
+
+export function getStaticPaths() {
+  const arts = loadCatalog();
+  return arts.map((art) => ({ params: { slug: art.slug }, props: { art } }));
+}
+
+const { art } = Astro.props;
+const img = resolveImage(art);
+const og = await ogImageSrc(img);
+const parsed = parseFilename(art.file);
+const dim = dimensionsLabel(art);
+const alt = art.alt ?? captionFor(art);
+
+// Соседи по первой категории — статический фолбэк пейджера
+// (прямой заход без ?from, поисковики, отключённый JS).
+const all = loadCatalog();
+const cat = art.categories[0];
+const siblings = cat ? artworksByCategory(all, cat) : [];
+const idx = siblings.findIndex((s) => s.slug === art.slug);
+const prev = idx > 0 ? siblings[idx - 1] : null;
+const next = idx >= 0 && idx < siblings.length - 1 ? siblings[idx + 1] : null;
+
+// Пейджер и лайтбокс листают по разделу-источнику (?from). В страницу
+// зашиваем списки соседей для каждого раздела, куда входит работа:
+// каждой категории — свой порядок, «в наличии» — свой. Картинки —
+// готовые WebP-варианты сборки (максимум 1640 px по ширине); дубликатов
+// файлов не будет, getImage кэшируется по хэшу.
+const lbSrc = async (a: Artwork): Promise<string | undefined> => {
+  const m = resolveImage(a);
+  if (!m) return undefined;
+  return (await getImage({ src: m, width: Math.min(1640, m.width), format: 'webp' })).src;
+};
+
+type LbItem = { src?: string; title: string; alt: string; slug: string };
+type LbGroup = { items: LbItem[]; index: number };
+
+const lbGroup = async (list: Artwork[]): Promise<LbGroup | undefined> => {
+  const i = list.findIndex((s) => s.slug === art.slug);
+  if (i < 0) return undefined;
+  return {
+    items: await Promise.all(
+      list.map(async (s): Promise<LbItem> => ({
+        src: await lbSrc(s),
+        title: titleFor(s),
+        alt: s.alt ?? captionFor(s),
+        slug: s.slug,
+      })),
+    ),
+    index: i,
+  };
+};
+
+const groups: Record<string, LbGroup> = {};
+for (const c of art.categories) {
+  const g = await lbGroup(artworksByCategory(all, c));
+  if (g) groups[c] = g;
+}
+if (art.available) {
+  const g = await lbGroup(availableArtworks(all));
+  if (g) groups['v-nalichii'] = g;
+}
+const defaultGroup = cat ?? (art.available ? 'v-nalichii' : '');
+const lbData = JSON.stringify({ groups, defaultGroup });
+
+// Сниппет: «Название, год, техника · размер. Художник …».
+const description = art.caption
+  ? `${art.caption}. ${fullName}.`
+  : `${metaLine(art)}. ${fullName}.`;
+
+// schema.org/VisualArtwork — машиночитаемые факты о работе.
+const d = art.dimensions;
+const artworkSchema = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'VisualArtwork',
+  name: titleFor(art),
+  image: og ? absUrl(og) : undefined,
+  url: absUrl(Astro.url.pathname),
+  creator: { '@type': 'Person', name: fullName, url: absUrl('/') },
+  artMedium: art.technique,
+  dateCreated: art.year ? String(art.year) : undefined,
+  genre: art.categories,
+  width: d?.w ? { '@type': 'QuantitativeValue', value: d.w, unitText: d.unit ?? 'см' } : undefined,
+  height: d?.h ? { '@type': 'QuantitativeValue', value: d.h, unitText: d.unit ?? 'см' } : undefined,
+});
+---
+
+<Layout
+  title={`${titleFor(art)} — ${fullName}`}
+  description={description}
+  image={og}
+  type="article"
+>
+  <script type="application/ld+json" set:html={artworkSchema} />
+  <section class="section container artwork">
+    <nav class="crumbs" aria-label="Хлебные крошки">
+      <a href="/gallery">Галерея</a>
+      {art.categories.map((c, i) => (
+        <><span>/</span><a href={`/gallery/${encodeURIComponent(c)}`}>{c}</a></>
+      ))}
+    </nav>
+
+    <div class="split">
+      <figure class="figure">
+        {img ? (
+          <button class="figure-btn" type="button" id="lightbox-open" aria-label="Увеличить изображение">
+            <Picture
+              src={img}
+              alt={alt}
+              widths={[820, 1240, 1640]}
+              sizes="(max-width: 880px) 92vw, 816px"
+              formats={['webp']}
+              fetchpriority="high"
+            />
+          </button>
+        ) : (
+          <div class="missing">нет изображения</div>
+        )}
+      </figure>
+
+      <aside class="info">
+        <p class="eyebrow">{art.needs_metadata ? 'Черновик' : 'Картина'}</p>
+        <h1>{titleFor(art)}</h1>
+        <dl class="meta">
+          {parsed || art.year ? (
+            <div><dt>Год</dt><dd>{parsed?.year ?? art.year ?? '—'}</dd></div>
+          ) : null}
+          {parsed || art.technique ? (
+            <div><dt>Техника</dt><dd>{parsed?.technique ?? art.technique ?? '—'}</dd></div>
+          ) : null}
+          {dim ? <div><dt>Размер</dt><dd>{dim}</dd></div> : null}
+          {art.available ? <div><dt>Наличие</dt><dd>в наличии</dd></div> : null}
+        </dl>
+
+        <div class="cats">
+          {art.categories.map((c) => (
+            <a href={`/gallery/${encodeURIComponent(c)}`} class="cat-chip">{c}</a>
+          ))}
+        </div>
+
+        <p class="buy-note muted">
+          Покупка — через контакт с художником.
+          <a href="/contacts" class="link-more">Связаться →</a>
+        </p>
+
+        <nav class="pager" aria-label="Соседние работы">
+          {prev ? <a href={`/artworks/${prev.slug}`} class="pager-link" data-pager="prev">← Пред.</a> : <span class="pager-link disabled" data-pager="prev">← Пред.</span>}
+          {next ? <a href={`/artworks/${next.slug}`} class="pager-link" data-pager="next">След. →</a> : <span class="pager-link disabled" data-pager="next">След. →</span>}
+        </nav>
+      </aside>
+    </div>
+  </section>
+
+  {/* Данные листания: списки работ по каждому разделу, куда входит эта
+      работа, в порядке соответствующего раздела галереи. */}
+  <script type="application/json" id="lightbox-data" set:html={lbData} />
+
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Просмотр работы" hidden>
+    <div class="lb-backdrop" data-lb-close></div>
+    <button class="lb-btn lb-close" type="button" aria-label="Закрыть" data-lb-close>✕</button>
+    <button class="lb-btn lb-prev" type="button" aria-label="Предыдущая работа" data-lb-prev>←</button>
+    <figure class="lb-figure">
+      <img class="lb-img" alt="" />
+      <figcaption><a class="lb-caption"></a></figcaption>
+    </figure>
+    <button class="lb-btn lb-next" type="button" aria-label="Следующая работа" data-lb-next>→</button>
+  </div>
+
+  <script>
+    // Листание по разделу-источнику: ?from выбирает список соседей для
+    // пейджера и лайтбокса. Без ?from (прямой заход, главная, новости) —
+    // фолбэк на первую категорию; ссылки пейджера несут ?from дальше,
+    // чтобы листание шло по тому же разделу, пока из него не ушли.
+    const dataEl = document.getElementById('lightbox-data');
+    const openBtn = document.getElementById('lightbox-open');
+    const lb = document.getElementById('lightbox');
+    const pager = document.querySelector('.pager');
+    if (dataEl && openBtn && lb) {
+      const { groups, defaultGroup } = JSON.parse(dataEl.textContent || '{}');
+
+      let from = new URLSearchParams(location.search).get('from') || '';
+      if (from && !groups[from]) from = ''; // чужой/битый ?from — не тащим дальше
+      const group = (from && groups[from]) || (defaultGroup && groups[defaultGroup]) || null;
+      const items: { src?: string; title: string; alt: string; slug: string }[] = group?.items ?? [];
+      const index: number = group?.index ?? 0;
+
+      // Пейджер: переписываем статические ссылки на соседей выбранного
+      // раздела; на краях раздела ссылка гаснет (как в статике).
+      const setPager = (dir: 'prev' | 'next', nb: { slug: string } | undefined) => {
+        const el = pager?.querySelector(`[data-pager="${dir}"]`);
+        if (!el) return;
+        if (!nb) {
+          el.classList.add('disabled');
+          if (el instanceof HTMLAnchorElement) el.removeAttribute('href');
+          return;
+        }
+        const a = document.createElement('a');
+        a.className = 'pager-link';
+        a.href = `/artworks/${nb.slug}` + (from ? `?from=${encodeURIComponent(from)}` : '');
+        a.textContent = el.textContent;
+        a.setAttribute('data-pager', dir);
+        el.replaceWith(a);
+      };
+      setPager('prev', items[index - 1]);
+      setPager('next', items[index + 1]);
+
+      // Лайтбокс: открытие по клику на картину, закрытие по фону/
+      // крестику/Esc, листание стрелками и кнопками — тот же список.
+      const img = lb.querySelector('.lb-img') as HTMLImageElement;
+      const caption = lb.querySelector('.lb-caption') as HTMLAnchorElement;
+      const prevBtn = lb.querySelector('[data-lb-prev]') as HTMLButtonElement;
+      const nextBtn = lb.querySelector('[data-lb-next]') as HTMLButtonElement;
+      const closeBtn = lb.querySelector('.lb-close') as HTMLButtonElement;
+      let current = index;
+      let lastFocus: HTMLElement | null = null;
+
+      const has = (n: number) => n >= 0 && n < items.length && Boolean(items[n]?.src);
+
+      function show(n: number) {
+        if (!has(n)) return;
+        current = n;
+        const it = items[current];
+        img.src = it.src;
+        img.alt = it.alt || '';
+        // Подпись — ссылка на страницу показанной работы (раздел
+        // сохраняем: листание там продолжится по нему же).
+        if (caption) {
+          caption.textContent = it.title;
+          caption.href = `/artworks/${it.slug}` + (from ? `?from=${encodeURIComponent(from)}` : '');
+        }
+        prevBtn.hidden = !has(current - 1);
+        nextBtn.hidden = !has(current + 1);
+        // Соседей подгружаем заранее — стрелки откликаются мгновенно.
+        for (const nb of [current - 1, current + 1]) {
+          if (has(nb)) { const pre = new Image(); pre.src = items[nb].src; }
+        }
+      }
+
+      function open() {
+        lastFocus = document.activeElement as HTMLElement | null;
+        lb.hidden = false;
+        document.body.style.overflow = 'hidden';
+        // Всегда начинаем с картины этой страницы — даже если до этого
+        // листали и закрыли на другой работе.
+        show(index);
+        closeBtn.focus();
+      }
+
+      function close() {
+        lb.hidden = true;
+        document.body.style.overflow = '';
+        if (lastFocus) lastFocus.focus();
+      }
+
+      openBtn.addEventListener('click', open);
+      lb.querySelectorAll('[data-lb-close]').forEach((el) => el.addEventListener('click', close));
+      prevBtn.addEventListener('click', () => show(current - 1));
+      nextBtn.addEventListener('click', () => show(current + 1));
+      document.addEventListener('keydown', (e) => {
+        if (lb.hidden) return;
+        if (e.key === 'Escape') close();
+        if (e.key === 'ArrowLeft') show(current - 1);
+        if (e.key === 'ArrowRight') show(current + 1);
+        // Фокус-трап: Tab не уходит под оверлей, цикл по кнопкам и подписи.
+        if (e.key === 'Tab') {
+          const list = Array.from(lb.querySelectorAll<HTMLElement>('button:not([hidden]), a[href]'));
+          if (!list.length) return;
+          const idx = list.indexOf(document.activeElement as HTMLElement);
+          const next = e.shiftKey
+            ? idx <= 0 ? list.length - 1 : idx - 1
+            : idx === list.length - 1 ? 0 : idx + 1;
+          e.preventDefault();
+          list[next].focus();
+        }
+      });
+    }
+  </script>
+</Layout>
+
+<style>
+  .crumbs { font-size: 0.8rem; color: var(--fg-soft); margin-bottom: 24px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .crumbs a:hover { color: var(--accent); }
+  .split { display: grid; grid-template-columns: 1fr 320px; gap: 48px; align-items: start; }
+  @media (max-width: 880px) { .split { grid-template-columns: 1fr; } }
+  .figure { margin: 0; background: var(--frame); border: 1px solid var(--line); padding: 14px; box-shadow: var(--frame-shadow); }
+  /* Кнопка-обёртка: клик по картине открывает лайтбокс. */
+  .figure-btn { display: block; width: 100%; padding: 0; border: none; background: none; cursor: zoom-in; }
+  .figure-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+  .figure picture { display: block; }
+  .figure img { width: 100%; height: auto; }
+  .missing { aspect-ratio: 4/5; display: grid; place-items: center; color: var(--fg-soft); background: var(--bg-soft); }
+  .info { position: sticky; top: 90px; }
+  @media (max-width: 880px) { .info { position: static; } }
+  .meta { margin: 16px 0 20px; }
+  .meta div { display: grid; grid-template-columns: 90px 1fr; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .meta dt { color: var(--fg-soft); font-size: 0.8rem; }
+  .meta dd { margin: 0; }
+  .cats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+  .cat-chip { font-size: 0.78rem; padding: 4px 12px; border: 1px solid var(--line); border-radius: 20px; color: var(--fg-soft); }
+  .cat-chip:hover { border-color: var(--fg); color: var(--fg); }
+  .buy-note { font-size: 0.88rem; }
+  .link-more { color: var(--accent); border-bottom: 1px solid var(--line); padding-bottom: 1px; }
+  .pager { display: flex; justify-content: space-between; margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--line); }
+  .pager-link { font-size: 0.85rem; }
+  .pager-link.disabled { color: var(--line); pointer-events: none; }
+
+  /* Стили лайтбокса (.lightbox, .lb-*) — общие, в styles/global.css. */
+</style>

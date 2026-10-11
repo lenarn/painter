@@ -1,0 +1,124 @@
+{{define "content"}}
+<h1>Об авторе</h1>
+
+{{if .Saved}}<div class="saved">Сохранено. Не забудь пересобрать сайт.</div>{{end}}
+{{if .Errors}}
+<div class="errors">
+  {{range .Errors}}<div>• {{.}}</div>{{end}}
+</div>
+{{end}}
+
+<form method="POST" action="/about/save" enctype="multipart/form-data">
+  <div class="panel">
+    <div class="row">
+      <div>
+        <label>Имя</label>
+        <input type="text" name="name" value="{{.Name}}" required>
+      </div>
+      <div>
+        <label>Фамилия</label>
+        <input type="text" name="surname" value="{{.Surname}}" required>
+      </div>
+    </div>
+    <label>Текст «Об авторе» (пустая строка — новый абзац)</label>
+    <textarea name="intro" id="f-intro" spellcheck="true">{{.Intro}}</textarea>
+    <div class="spell-box">
+      <button type="button" class="ghost" onclick="spellCheck()">Проверить орфографию</button>
+      <div id="spell-results"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <label>Творческие союзы</label>
+    <input type="hidden" name="mem_count" id="mem-count" value="{{len .Memberships}}">
+    <div id="mem-rows">
+      {{range $i, $m := .Memberships}}
+      <div class="mem-row">
+        <input type="text" name="mem_title_{{$i}}" value="{{$m.Title}}" placeholder="Член ТСХР (МОООСХ)">
+        <input type="number" name="mem_year_{{$i}}" value="{{$m.Year}}" min="1900" max="2100" placeholder="год">
+        <button type="button" class="ghost del-row" title="убрать строку">×</button>
+      </div>
+      {{end}}
+    </div>
+    <p><button type="button" class="ghost" onclick="addMemRow()">+ союз</button></p>
+  </div>
+
+  <div class="panel">
+    <label>Фото на странице «Об авторе»</label>
+    <div class="edit-preview"><img src="/assets/about/photo1.jpg" alt="Портрет автора"></div>
+    <label>Заменить фото (jpg/jpeg — перезапишет текущее)</label>
+    <input type="file" name="photo" accept=".jpg,.jpeg">
+  </div>
+
+  <p style="margin-top:20px"><button type="submit">Сохранить</button></p>
+</form>
+
+<script>
+// Строки союзов: клонирование последней, удаление без ренумеринга —
+// сервер пропускает пустые названия, порядок сохраняется.
+function addMemRow() {
+  const rows = document.getElementById('mem-rows');
+  const n = +document.getElementById('mem-count').value;
+  const row = rows.querySelector('.mem-row:last-child');
+  const div = row ? row.cloneNode(true) : document.createElement('div');
+  div.className = 'mem-row';
+  if (!row) div.innerHTML =
+    '<input type="text" placeholder="Член ТСХР (МОООСХ)">' +
+    '<input type="number" min="1900" max="2100" placeholder="год">';
+  div.querySelectorAll('input').forEach(inp => {
+    inp.name = inp.name.replace(/_\d+$/, '_' + n) ||
+      (/number/.test(inp.type) ? 'mem_year_' + n : 'mem_title_' + n);
+    inp.value = '';
+  });
+  if (row) div.querySelector('.del-row').onclick = delRow;
+  else {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'ghost del-row'; b.textContent = '×';
+    b.onclick = delRow; div.appendChild(b);
+  }
+  rows.appendChild(div);
+  document.getElementById('mem-count').value = n + 1;
+}
+function delRow(e) { e.target.closest('.mem-row, .soc-row').remove(); }
+
+// Проверка орфографии текста «Об авторе» → /spell.
+async function spellCheck() {
+  const box = document.getElementById('spell-results');
+  const text = document.getElementById('f-intro');
+  box.innerHTML = '<span class="muted">Проверяю…</span>';
+  try {
+    const res = await fetch('/spell', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({intro: text.value}),
+    });
+    const data = await res.json();
+    if (!data.available) {
+      box.innerHTML = '<div class="muted">' + data.error + ' — можно сохранить без проверки.</div>';
+      return;
+    }
+    const findings = (data.fields || {}).intro || [];
+    let html = '';
+    for (const f of findings) {
+      html += '<div class="spell-item"><span class="spell-word">' + f.word + '</span>' +
+        f.s.map(s =>
+          '<span class="spell-sug" data-from="' + f.word.replace(/"/g,'&quot;') +
+          '" data-to="' + s.replace(/"/g,'&quot;') + '">' + s + '</span>'
+        ).join('') + '</div>';
+    }
+    box.innerHTML = findings.length === 0
+      ? '<span class="muted">Ошибок не найдено.</span>'
+      : html;
+    box.querySelectorAll('.spell-sug').forEach(el => {
+      el.onclick = () => {
+        text.value = text.value.split(el.dataset.from).join(el.dataset.to);
+        el.closest('.spell-item').style.opacity = '.4';
+      };
+    });
+  } catch (e) {
+    box.innerHTML = '<div class="muted">Проверка недоступна — можно сохранить без проверки.</div>';
+  }
+}
+document.querySelectorAll('.del-row').forEach(b => b.onclick = delRow);
+</script>
+{{end}}
