@@ -207,6 +207,11 @@ site owner's personal data. Because of this a fresh clone shows an empty site
 until you run the importer with your own folders (step 3) and copy the
 content templates (step 4).
 
+The favicon is personal too: `web/public/favicon.png` (32x32) and
+`web/public/apple-touch-icon.png` (180x180) are in `.gitignore` — put your own
+cropped artwork there. Until they exist the build links `web/public/favicon.svg`,
+a neutral placeholder committed to the repository.
+
 ## License
 
 [MIT](LICENSE) — project code.

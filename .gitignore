@@ -21,6 +21,10 @@ web/src/assets/about/
 web/src/content/*.json
 web/src/content/*.bak
 
+# --- personal favicon (owner's artwork; repo keeps favicon.svg placeholder) ---
+web/public/favicon.png
+web/public/apple-touch-icon.png
+
 # --- working folders (not part of the site) ---
 reports/
 posts/

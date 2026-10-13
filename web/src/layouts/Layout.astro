@@ -1,4 +1,6 @@
 ---
+import { existsSync } from 'node:fs';
+import path from 'node:path';
 import '../styles/global.css';
 // Самохостинг Cormorant Garamond (кириллица). Файлы шрифта лежат локально,
 // внешний запрос к Google Fonts не нужен.
@@ -35,6 +37,10 @@ const {
 const canonical = absUrl(Astro.url.pathname);
 const ogImage = image ? absUrl(image) : undefined;
 const siteJson = JSON.stringify([websiteSchema(absUrl('/')), personSchema(absUrl('/'))]);
+
+// Фавикон персональный (картина владельца) и в git не входит — см. .gitignore.
+// Личный favicon.png положен → PNG-ссылки; иначе (сборка из репо) — SVG-заглушка.
+const hasFaviconPng = existsSync(path.join(process.cwd(), 'public', 'favicon.png'));
 ---
 
 <!doctype html>
@@ -53,7 +59,14 @@ const siteJson = JSON.stringify([websiteSchema(absUrl('/')), personSchema(absUrl
     {ogImage && <meta property="og:image" content={ogImage} />}
     {canonical && <meta property="og:url" content={canonical} />}
     {ogImage && <meta name="twitter:card" content="summary_large_image" />}
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    {hasFaviconPng ? (
+      <>
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+      </>
+    ) : (
+      <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    )}
     <title>{title}</title>
     <script type="application/ld+json" set:html={siteJson} />
   </head>

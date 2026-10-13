@@ -21,7 +21,8 @@ web/                      сайт (Astro 5, статическая генера
   src/content/            контент JSON — ЛИЧНОЕ, в git нет; catalog.json генерирует импортёр
   src/content/template/   заглушки контента для нового пользователя — в git есть
   src/assets/             artworks/ (сканы), about/ (портрет), news/ — ЛИЧНОЕ, в git нет
-  public/                 favicon.svg, robots.txt, .htaccess (кэширование)
+  public/                 favicon.png + apple-touch-icon.png (личное, в git нет;
+                          favicon.svg — заглушка для сборок из репо), robots.txt, .htaccess
 tools/catalogimport/      импортёр: sha256-дедуп → assets + catalog.json, мерж метаданных по hash
 tools/admin/              локальная админка: Go html/template, порт 8150, правит content JSON,
                           спеллер, сборка, zip, превью
