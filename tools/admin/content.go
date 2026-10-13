@@ -172,10 +172,14 @@ func (a *admin) handleExhibitionForm(w http.ResponseWriter, r *http.Request) {
 		item = st.Exhibitions[idx]
 	}
 	a.render(w, "exhibition-form", map[string]interface{}{
-		"Page":  "exhibitions",
-		"Index": idx,
-		"Item":  item,
-		"Errors": []string{},
+		"Page":            "exhibitions",
+		"Index":           idx,
+		"Item":            item,
+		"Saved":           r.URL.Query().Get("saved"),
+		"Artworks":        artworkViews(st),
+		"CheckedArtworks": checkedMap(item.Artworks),
+		"Linked":          linkedViews(st, item.Artworks),
+		"Errors":          []string{},
 	})
 }
 
@@ -218,7 +222,13 @@ func (a *admin) handleExhibitionSave(w http.ResponseWriter, r *http.Request) {
 
 	renderForm := func(errs []string) {
 		a.render(w, "exhibition-form", map[string]interface{}{
-			"Page": "exhibitions", "Index": idx, "Item": item, "Errors": errs,
+			"Page":            "exhibitions",
+			"Index":           idx,
+			"Item":            item,
+			"Artworks":        artworkViews(st),
+			"CheckedArtworks": checkedMap(item.Artworks),
+			"Linked":          linkedViews(st, item.Artworks),
+			"Errors":          errs,
 		})
 	}
 	if len(errs) > 0 {
@@ -228,6 +238,7 @@ func (a *admin) handleExhibitionSave(w http.ResponseWriter, r *http.Request) {
 
 	if idx < 0 {
 		st.Exhibitions = append(st.Exhibitions, item)
+		idx = len(st.Exhibitions) - 1 // правка новой записи по её индексу
 	} else {
 		st.Exhibitions[idx] = item
 	}
@@ -235,7 +246,9 @@ func (a *admin) handleExhibitionSave(w http.ResponseWriter, r *http.Request) {
 		renderForm([]string{"Не удалось записать exhibitions.json: " + err.Error()})
 		return
 	}
-	http.Redirect(w, r, "/exhibitions?saved=1", http.StatusSeeOther)
+	// Возврат на форму правки (решение Елены 2026-10-14), не на список.
+	http.Redirect(w, r,
+		fmt.Sprintf("/exhibitions/edit?i=%d&saved=1", idx), http.StatusSeeOther)
 }
 
 func exhibitionFromForm(r *http.Request) ExhibitionEntry {
@@ -247,6 +260,7 @@ func exhibitionFromForm(r *http.Request) ExhibitionEntry {
 		Title:     strings.TrimSpace(r.FormValue("title")),
 		Place:     strings.TrimSpace(r.FormValue("place")),
 		Note:      strings.TrimSpace(r.FormValue("note")),
+		Artworks:  trimList(r.Form["artworks"]),
 	}
 }
 

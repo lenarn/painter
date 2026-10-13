@@ -1,6 +1,8 @@
 {{define "content"}}
 <h1>{{if ge .Index 0}}Правка записи выставки{{else}}Новая выставка{{end}}</h1>
 
+{{if .Saved}}<div class="saved">Сохранено. Не забудь пересобрать сайт.</div>{{end}}
+
 {{if .Errors}}
 <div class="errors">
   {{range .Errors}}<div>• {{.}}</div>{{end}}
@@ -32,9 +34,47 @@
     <textarea name="note" style="min-height:80px" spellcheck="true">{{.Item.Note}}</textarea>
   </div>
 
+  {{if .Linked}}
+  <div class="panel">
+    <label>Работы выставки (миниатюры на странице выставок)</label>
+    <div class="linked">
+      {{range .Linked}}
+      <div class="linked-item">
+        <img src="/assets/artworks/{{.File}}" alt="{{.Title}}" loading="lazy" width="200">
+        <div class="linked-title">{{.Title}}{{if .Year}}, {{.Year}}{{end}}</div>
+      </div>
+      {{end}}
+    </div>
+  </div>
+  {{end}}
+
+  <div class="panel" style="margin-top:20px">
+    <div class="hint">В отличие от серий, ссылки односторонние: карточка работы остаётся без изменений, а выбранное сохраняется в выставке. Отмеченные работы — в панели выше.</div>
+    <input type="text" id="exArtworksSearch" placeholder="Поиск по названию…" oninput="filterExArtworks()">
+    <div class="picker" id="ex-artworks-picker">
+      {{range .Artworks}}
+      <label class="check">
+        <input type="checkbox" name="artworks" value="{{.Slug}}"
+               {{if index $.CheckedArtworks .Slug}}checked{{end}}>
+        <img class="thumb" src="/assets/artworks/{{.File}}" alt="" loading="lazy">
+        <span>{{.Title}}{{if .Year}}, {{.Year}}{{end}}</span>
+      </label>
+      {{end}}
+    </div>
+  </div>
+
   <p style="margin-top:20px">
     <button type="submit">Сохранить</button>
     <a class="muted" href="/exhibitions" style="margin-left:16px">отмена</a>
   </p>
 </form>
+
+<script>
+function filterExArtworks() {
+  const q = document.getElementById('exArtworksSearch').value.trim().toLowerCase();
+  document.querySelectorAll('#ex-artworks-picker label').forEach(l => {
+    l.style.display = !q || l.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+</script>
 {{end}}

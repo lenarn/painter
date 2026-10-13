@@ -33,6 +33,7 @@ export interface ExhibitionEntry {
   place?: string;
   type?: string; // «персональная» | «групповая» (опционально)
   note?: string;
+  artworks?: string[]; // slug работ из catalog.json (миниатюры под записью)
 }
 
 export const aboutData = about as AboutData;

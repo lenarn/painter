@@ -88,12 +88,13 @@ type EducationEntry struct {
 // ExhibitionEntry — запись выставки. Порядок полей = как в exhibitions.json;
 // place/note записываются всегда (в файле ключи есть и пустые).
 type ExhibitionEntry struct {
-	Year      int    `json:"year"`
-	SortStart string `json:"sortStart"`
-	Period    string `json:"period"`
-	Title     string `json:"title"`
-	Place     string `json:"place"`
-	Note      string `json:"note"`
+	Year      int      `json:"year"`
+	SortStart string   `json:"sortStart"`
+	Period    string   `json:"period"`
+	Title     string   `json:"title"`
+	Place     string   `json:"place"`
+	Note      string   `json:"note"`
+	Artworks  []string `json:"artworks,omitempty"` // slug работ из каталога (миниатюры на сайте)
 }
 
 // ContactLink — ссылка контакта (label — подпись, href — адрес).

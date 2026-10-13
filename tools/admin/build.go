@@ -121,7 +121,9 @@ func (a *admin) handleBuildSite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !atomic.CompareAndSwapInt32(&busy, 0, 1) {
-		a.renderPublish(w, buildResult{Title: "Сборка"}, true)
+		// Отказ из-за занятости — не «ошибка»: показать статус на чистой
+		// странице (баннер «сейчас идёт сборка или архив»).
+		http.Redirect(w, r, "/publish", http.StatusSeeOther)
 		return
 	}
 	defer atomic.StoreInt32(&busy, 0)
@@ -150,7 +152,9 @@ func (a *admin) handleMakeArchive(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !atomic.CompareAndSwapInt32(&busy, 0, 1) {
-		a.renderPublish(w, buildResult{Title: "Архив"}, true)
+		// Отказ из-за занятости — не «ошибка»: показать статус на чистой
+		// странице (баннер «сейчас идёт сборка или архив»).
+		http.Redirect(w, r, "/publish", http.StatusSeeOther)
 		return
 	}
 	defer atomic.StoreInt32(&busy, 0)
@@ -349,8 +353,8 @@ func (a *admin) launchPreview() error {
 // на сайт; порт занят чужим — гасим дерево и запускаем своё («без разбора»).
 func (a *admin) handlePreviewStart(w http.ResponseWriter, r *http.Request) {
 	if atomic.LoadInt32(&busy) == 1 {
-		a.renderPublish(w, buildResult{Title: "Запуск превью",
-			Output: "Идёт сборка или архив — дождись окончания."}, true)
+		// Занято — показать статус на чистой странице, без «Не получилось».
+		http.Redirect(w, r, "/publish", http.StatusSeeOther)
 		return
 	}
 	pid := a.readPreviewPid()
