@@ -100,9 +100,9 @@ works in one run.
 
 ### 4. Copy the content templates
 
-The content files (news, the about page, education, exhibitions, contacts)
-are not part of the repository — they hold the site owner's personal data.
-Copy the placeholders from `web/src/content/template/` into
+The content files (news, the about page, education, exhibitions, contacts,
+afisha events) are not part of the repository — they hold the site owner's
+personal data. Copy the placeholders from `web/src/content/template/` into
 `web/src/content/` and replace the text with your own:
 
 ```
@@ -111,6 +111,7 @@ copy web\src\content\template\about.json web\src\content\
 copy web\src\content\template\education.json web\src\content\
 copy web\src\content\template\exhibitions.json web\src\content\
 copy web\src\content\template\contacts.json web\src\content\
+copy web\src\content\template\afisha.json web\src\content\
 ```
 
 (`catalog.example.json` stays where it is — it is only a schema reference;
@@ -190,6 +191,25 @@ The admin panel: news, artworks, exhibitions and the build page.
 | ![Admin panel: news](images/news.PNG) | ![Admin panel: artworks](images/pictures.PNG) |
 |---|---|
 | ![Admin panel: exhibitions](images/exhibitions.PNG) | ![Admin panel: build and publish](images/build.PNG) |
+
+## Afisha — the «Where to go» block on the home page
+
+One admin page curates a small block on the home page with upcoming
+exhibitions and lectures: tick the events you want from the found lists,
+or add your own entries with the form on the same page — no external
+services involved. Past events are hidden automatically at build time
+(by their dates), so the selection only needs pruning rarely.
+
+The optional «Run agent search» button on that page asks Claude Code
+(headless) to sweep Moscow museum listings and drop fresh events into
+`exhibitions/` and `lectures/` in the repository root, where the tick
+list takes them from. It needs Claude Code installed and the
+`exhibition-scout` agent shipped in `.claude/agents/` (part of this
+repository, used with the repository root as your project directory).
+Without Claude Code the button just reports that — the rest of the Afisha
+page, including manual entries, works as usual. Your personal
+`web/src/content/afisha.json` stays out of the repository like all other
+content.
 
 ## Deploy as an archive
 

@@ -1,0 +1,130 @@
+{{define "content"}}
+<h1>Афиша</h1>
+
+{{if .Saved}}<div class="saved">Сохранено. Не забудь пересобрать сайт.</div>{{end}}
+{{if .Errors}}
+<div class="errors">
+  {{range .Errors}}<div>• {{.}}</div>{{end}}
+</div>
+{{end}}
+
+<div class="panel">
+  <label>Поиск новых событий (агент)</label>
+  {{if .Scout.Running}}
+  <div class="saved" style="margin:8px 0 0">Идёт поиск — запущен {{.Scout.Started}}.
+  Занимает 5–15 минут; когда закончится, обнови страницу — пикер покажет найденное.</div>
+  {{else}}
+  {{if .Scout.Done}}
+  <div class="{{if .Scout.OK}}saved{{else}}errors{{end}}">
+    {{if .Scout.OK}}Готово{{else}}Не получилось{{end}} — поиск ({{.Scout.Seconds}}).
+    {{if .Scout.Output}}<pre class="build-out">{{.Scout.Output}}</pre>{{end}}
+  </div>
+  {{end}}
+  <div class="hint">Клод ищет свежие выставки и лекции в Москве (5–15 минут),
+  сырьё падает в exhibitions/ и lectures/ в корне проекта — пикер ниже
+  подхватит при следующем чтении страницы.</div>
+  <p><a class="act" href="/afisha/scout">Запустить поиск</a></p>
+  {{end}}
+</div>
+
+{{if .Count}}
+<div class="panel">
+  <label>Отобрано на сайт: {{.Count}}{{if .Past}} ({{.Past}} уже прошли — на сайт не попадут){{end}}</label>
+  {{range .Picked}}
+  <div class="art-row">
+    <div class="art-info">
+      <b>{{.E.Title}}</b>
+      <span class="badge">{{if eq .E.Type "lecture"}}лекция{{else}}выставка{{end}}</span>
+      {{if .E.Manual}}<span class="badge">своё</span>{{end}}
+      <div class="hint">{{.E.Venue}}{{if .E.DateEnd}} — до {{.E.DateEnd}}{{end}}
+      {{if eq .E.Type "lecture"}}{{if .E.Date}} — {{.E.Date}}{{if .E.Time}}, {{.E.Time}}{{end}}{{end}}{{end}}</div>
+      {{if .E.Manual}}
+      <form method="POST" action="/afisha/remove" style="margin:6px 0 0">
+        <input type="hidden" name="i" value="{{.I}}">
+        <button type="submit" class="ghost del-row" style="padding:2px 10px; font-size:12.5px">убрать</button>
+      </form>
+      {{end}}
+    </div>
+  </div>
+  {{end}}
+</div>
+{{end}}
+
+<form method="POST" action="/afisha/save">
+  <div class="panel">
+    <label>Найдено агентом — отметь нужное</label>
+    <input type="text" id="afishaSearch" placeholder="Поиск по названию или музею…" oninput="filterAfisha()">
+    <div class="picker" id="afisha-picker">
+      {{range .Items}}
+      <label class="check">
+        <input type="checkbox" name="afisha" value="{{.Key}}" {{if index $.Checked .Key}}checked{{end}}>
+        <span><b>{{.Title}}</b>
+        <span class="badge">{{.Type}}</span>
+        <span class="badge">{{.Dates}}{{if .Past}} — прошло{{end}}</span>
+        <div class="hint">{{.Venue}}</div></span>
+      </label>
+      {{else}}
+      <div class="hint">Подборок агента ещё нет: запусти поиск выставок/лекций — появятся здесь.</div>
+      {{end}}
+    </div>
+    <div class="hint">Снимешь галочку → уберёшь с сайта. Прошедшие события (зелёная отметка «прошло») на сайт не попадают, но и не удаляются — за датами следить не надо.</div>
+  </div>
+  <p><button type="submit">Сохранить</button></p>
+</form>
+
+<div class="panel">
+  <label>Своё событие — добавить в отбор сразу</label>
+  <form method="POST" action="/afisha/add">
+    <div class="row">
+      <div style="max-width:160px">
+        <label>Тип</label>
+        <select name="addType">
+          <option value="exhibition">Выставка</option>
+          <option value="lecture">Лекция</option>
+        </select>
+      </div>
+      <div>
+        <label>Название</label>
+        <input type="text" name="addTitle" spellcheck="true" required>
+      </div>
+    </div>
+    <label>Место проведения</label>
+    <input type="text" name="addVenue" spellcheck="true" required>
+    <label>Ссылка (необязательно — например, сайт площадки)</label>
+    <input type="url" name="addUrl" placeholder="https://…">
+    <div class="row">
+      <div>
+        <label>Выставка: начало</label>
+        <input type="date" name="addDateStart">
+      </div>
+      <div>
+        <label>Выставка: окончание</label>
+        <input type="date" name="addDateEnd">
+      </div>
+      <div>
+        <label>Лекция: день</label>
+        <input type="date" name="addDate">
+      </div>
+      <div>
+        <label>Лекция: время</label>
+        <input type="time" name="addTime">
+      </div>
+    </div>
+    <label>Описание (необязательно)</label>
+    <textarea name="addDescription" style="min-height:60px" spellcheck="true"></textarea>
+    <div class="hint">Выставке достаточно начала (или ничего — будет висеть до
+    обновления отбора); у лекции день обязателен. На карточке сайта: тип,
+    название, место · даты, 2 строки описания.</div>
+    <p><button type="submit">Добавить событие</button></p>
+  </form>
+</div>
+
+<script>
+function filterAfisha() {
+  const q = document.getElementById('afishaSearch').value.trim().toLowerCase();
+  document.querySelectorAll('#afisha-picker label').forEach(l => {
+    l.style.display = !q || l.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+</script>
+{{end}}

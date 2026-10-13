@@ -33,11 +33,15 @@ lectures/
 news/
 CLAUDE.md
 
-# .claude/ — личное (агенты, настройки), но скилл painter публикуется
+# .claude/ — личное (настройки), но скилл painter и субагент
+# exhibition-scout публикуются (поиск афиши работает и в чужом клоне)
 .claude/*
 !.claude/skills
 .claude/skills/*
 !.claude/skills/painter
+!.claude/agents
+.claude/agents/*
+!.claude/agents/exhibition-scout.md
 
 # --- scan source folders (imported via tools/catalogimport) ---
 /родные просторы/

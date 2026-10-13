@@ -10,6 +10,7 @@ import {
   featuredArtworks,
 } from '../lib/catalog';
 import { sortedNews, newsArtworks, formatDate, resolveNewsPhoto, newsAnchorHref, type NewsItem } from '../lib/news';
+import { loadAfisha, eventDates, eventKind, type AfishaEvent } from '../lib/afisha';
 import { aboutData } from '../lib/content';
 import { ogImageSrc } from '../lib/seo';
 
@@ -23,6 +24,9 @@ const ogImage = await ogImageSrc(resolveImage(featuredArtworks(arts)[0]));
 // Лента на главной: до 8 последних новостей (свежая — карточка двойной
 // ширины, 8 карточек закрывают сетку без одиноких клеток).
 const news = sortedNews().slice(0, 8);
+
+// «Куда пойти»: отобранные события, прошедшие отфильтрованы в lib/afisha.
+const afisha = loadAfisha();
 
 // Первое изображение новости: первая работа из каталога,
 // иначе первое произвольное фото.
@@ -46,47 +50,77 @@ function newsImage(item: NewsItem) {
     {/* h1 главной скрыт: заголовки секций остаются визуальными h2,
         структура для скринридеров и поисковиков — полная. */}
     <h1 class="visually-hidden">{fullName} — художник</h1>
-    <div class="section-head">
-      <h2>Новости</h2>
-      <a href="/news" class="link-more">Все новости →</a>
-    </div>
-    {news.length === 0 ? (
-      <p class="muted">Новостей пока нет.</p>
-    ) : (
-      <div class="news-grid">
-        {news.map((item, i) => {
-          const { img, alt } = newsImage(item);
-          const text = item.text.join(' ');
-          return (
-            <a class="card" class:list={{ featured: i === 0 }} href={newsAnchorHref(item.date)}>
-              {img ? (
-                <div class="frame">
-                  <Picture
-                    src={img}
-                    alt={alt}
-                    widths={i === 0 ? [780, 1200] : [480, 760]}
-                    sizes={
-                      i === 0
-                        ? '(max-width: 960px) 92vw, 780px'
-                        : '(max-width: 640px) 92vw, (max-width: 960px) 44vw, 376px'
-                    }
-                    formats={['webp']}
-                    loading={i === 0 ? 'eager' : 'lazy'}
-                    fetchpriority={i === 0 ? 'high' : undefined}
-                    decoding="async"
-                  />
-                </div>
-              ) : null}
-              <div class="body">
-                <p class="date">{formatDate(item.date)}</p>
-                <h3 class="title">{item.title}</h3>
-                <p class="text">{text}</p>
-              </div>
-            </a>
-          );
-        })}
+    <div class="home-cols">
+      <div class="col-news">
+        <div class="section-head">
+          <h2>Новости</h2>
+          <a href="/news" class="link-more">Все новости →</a>
+        </div>
+        {news.length === 0 ? (
+          <p class="muted">Новостей пока нет.</p>
+        ) : (
+          <div class="news-grid">
+            {news.map((item, i) => {
+              const { img, alt } = newsImage(item);
+              const text = item.text.join(' ');
+              return (
+                <a class="card" class:list={{ featured: i === 0 }} href={newsAnchorHref(item.date)}>
+                  {img ? (
+                    <div class="frame">
+                      <Picture
+                        src={img}
+                        alt={alt}
+                        widths={i === 0 ? [780, 1200] : [480, 760]}
+                        sizes={
+                          i === 0
+                            ? '(max-width: 960px) 92vw, 780px'
+                            : '(max-width: 640px) 92vw, (max-width: 960px) 44vw, 376px'
+                        }
+                        formats={['webp']}
+                        loading={i === 0 ? 'eager' : 'lazy'}
+                        fetchpriority={i === 0 ? 'high' : undefined}
+                        decoding="async"
+                      />
+                    </div>
+                  ) : null}
+                  <div class="body">
+                    <p class="date">{formatDate(item.date)}</p>
+                    <h3 class="title">{item.title}</h3>
+                    <p class="text">{text}</p>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        )}
       </div>
-    )}
+
+      {afisha.length > 0 && (
+        <aside class="col-afisha" aria-label="Куда пойти в Москве">
+          <div class="section-head">
+            <h2>Куда пойти</h2>
+          </div>
+          <div class="afisha-list">
+            {afisha.map((ev: AfishaEvent) => (
+              <article class="ev">
+                <p class="ev-kind">{eventKind(ev)}</p>
+                <h3 class="ev-title">
+                  {ev.url ? (
+                    <a href={ev.url} target="_blank" rel="noopener">{ev.title}</a>
+                  ) : (
+                    ev.title
+                  )}
+                </h3>
+                <p class="ev-meta">
+                  {[ev.venue, eventDates(ev)].filter(Boolean).join(' · ')}
+                </p>
+                {ev.description ? <p class="ev-desc">{ev.description}</p> : null}
+              </article>
+            ))}
+          </div>
+        </aside>
+      )}
+    </div>
   </section>
 
   <section class="section container">
@@ -128,8 +162,39 @@ function newsImage(item: NewsItem) {
   .link-more { font-size: 0.9rem; color: var(--fg-soft); border-bottom: 1px solid var(--line); padding-bottom: 2px; }
   .link-more:hover { color: var(--accent); border-color: var(--accent); }
 
-  /* Сетка новостей: 3 колонки, свежая новость занимает две. */
-  .news-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+  /* Новости + «Куда пойти» в две колонки: новости шире. */
+  .home-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 2.3fr) minmax(0, 1fr);
+    gap: 32px;
+    align-items: start;
+  }
+  /* Афиша: вертикальный список компактных карточек. */
+  .afisha-list { display: flex; flex-direction: column; gap: 14px; }
+  .ev {
+    padding: 14px 16px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    display: flex; flex-direction: column; gap: 6px;
+    transition: border-color 0.2s ease;
+  }
+  .ev:hover { border-color: var(--fg); }
+  .ev-kind {
+    margin: 0; font-size: 0.75rem; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--accent);
+  }
+  .ev-title { font-family: var(--font-serif); font-weight: 500; font-size: 1.05rem; margin: 0; }
+  .ev-title a { color: inherit; text-decoration: none; }
+  .ev-title a:hover { color: var(--accent); }
+  .ev-meta { margin: 0; font-size: 0.82rem; color: var(--fg-soft); }
+  .ev-desc {
+    margin: 0; color: var(--fg-soft); font-size: 0.9rem;
+    display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden;
+    -webkit-line-clamp: 2;
+  }
+
+  /* Сетка новостей: 2 колонки (широкая левая колонка), свежая занимает обе. */
+  .news-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 28px; }
   .card {
     display: flex; flex-direction: column; gap: 16px;
     color: inherit;
@@ -179,10 +244,6 @@ function newsImage(item: NewsItem) {
 
   .themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
   .theme {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 18px 22px; border: 1px solid var(--line); border-radius: var(--radius);
-    transition: border-color 0.2s ease, transform 0.2s ease;
-  }
   .theme:hover { border-color: var(--fg); transform: translateY(-2px); }
   .theme-name { font-family: var(--font-serif); font-size: 1.1rem; }
   .theme-count { font-size: 0.8rem; color: var(--fg-soft); }
@@ -192,6 +253,7 @@ function newsImage(item: NewsItem) {
   .about-preview h2 { margin-bottom: 0.4em; }
 
   @media (max-width: 960px) {
+    .home-cols { grid-template-columns: 1fr; gap: 48px; }
     .news-grid { grid-template-columns: repeat(2, 1fr); }
     .card.featured { grid-column: span 2; }
     /* Мобильный WebKit: фикс. пропорция + object-fit сбоит при

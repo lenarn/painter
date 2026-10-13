@@ -97,6 +97,23 @@ type ExhibitionEntry struct {
 	Artworks  []string `json:"artworks,omitempty"` // slug работ из каталога (миниатюры на сайте)
 }
 
+// AfishaEntry — отобранное событие афиши («Куда пойти» на главной),
+// web/src/content/afisha.json. Пишется из сырых подборок агента
+// (exhibitions/*.json, lectures/*.json) целиком — в админке только отбор.
+type AfishaEntry struct {
+	Type        string `json:"type"` // exhibition | lecture
+	Title       string `json:"title"`
+	Venue       string `json:"venue"`
+	Address     string `json:"address,omitempty"`
+	URL         string `json:"url,omitempty"`
+	DateStart   string `json:"dateStart,omitempty"` // выставка: начало, YYYY-MM-DD
+	DateEnd     string `json:"dateEnd,omitempty"`   // выставка: окончание
+	Date        string `json:"date,omitempty"`      // лекция: день, YYYY-MM-DD
+	Time        string `json:"time,omitempty"`      // лекция: HH:MM
+	Description string `json:"description,omitempty"`
+	Manual      bool   `json:"manual,omitempty"` // своё событие (не из подборок агента)
+}
+
 // ContactLink — ссылка контакта (label — подпись, href — адрес).
 type ContactLink struct {
 	Label string `json:"label"`
@@ -133,6 +150,9 @@ type Store struct {
 	Exhibitions []ExhibitionEntry
 	Contacts    Contacts
 
+	AfishaPath string
+	Afisha     []AfishaEntry // отбор для «Куда пойти» на главной
+
 	// Карта slug → работа (обновляется вместе с Catalog).
 	bySlug map[string]*Artwork
 }
@@ -145,6 +165,7 @@ func LoadStore(root string) (*Store, error) {
 		EducationPath:   filepath.Join(root, "web", "src", "content", "education.json"),
 		ExhibitionsPath: filepath.Join(root, "web", "src", "content", "exhibitions.json"),
 		ContactsPath:    filepath.Join(root, "web", "src", "content", "contacts.json"),
+		AfishaPath:      filepath.Join(root, "web", "src", "content", "afisha.json"),
 	}
 	if err := readJSON(s.NewsPath, &s.News); err != nil {
 		return nil, fmt.Errorf("news.json: %v", err)
@@ -164,6 +185,10 @@ func LoadStore(root string) (*Store, error) {
 	// contacts.json — новый файл (шаг 3); отсутствие — не ошибка, форма пустая.
 	if err := readJSON(s.ContactsPath, &s.Contacts); err != nil && !os.IsNotExist(err) {
 		return nil, fmt.Errorf("contacts.json: %v", err)
+	}
+	// afisha.json — тоже может отсутствовать: афиша ещё не отбиралась.
+	if err := readJSON(s.AfishaPath, &s.Afisha); err != nil && !os.IsNotExist(err) {
+		return nil, fmt.Errorf("afisha.json: %v", err)
 	}
 	s.reindex()
 	return s, nil
@@ -210,6 +235,9 @@ func (s *Store) SaveExhibitions() error {
 	return writeJSON(s.ExhibitionsPath, s.Exhibitions)
 }
 func (s *Store) SaveContacts() error { return writeJSON(s.ContactsPath, s.Contacts) }
+
+// SaveAfisha — бэкап + атомарная запись afisha.json.
+func (s *Store) SaveAfisha() error { return writeJSON(s.AfishaPath, s.Afisha) }
 
 // Categories — все уникальные категории каталога (полные пути, включая
 // вложенные «раздел/подраздел»), отсортированные — как на сайте.

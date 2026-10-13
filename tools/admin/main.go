@@ -90,6 +90,11 @@ func main() {
 	mux.HandleFunc("/education/save", a.handleEducationSave)
 	mux.HandleFunc("/contacts", a.handleContactsForm)
 	mux.HandleFunc("/contacts/save", a.handleContactsSave)
+	mux.HandleFunc("/afisha", a.handleAfishaForm)
+	mux.HandleFunc("/afisha/save", a.handleAfishaSave)
+	mux.HandleFunc("/afisha/add", a.handleAfishaAdd)
+	mux.HandleFunc("/afisha/remove", a.handleAfishaRemove)
+	mux.HandleFunc("/afisha/scout", a.handleScoutStart)
 	mux.HandleFunc("/publish", a.handlePublishForm)
 	mux.HandleFunc("/publish/build", a.handleBuildSite)
 	mux.HandleFunc("/publish/archive", a.handleMakeArchive)
@@ -119,6 +124,7 @@ func (a *admin) loadTemplates() {
 		"education-list":   "education-list.html",
 		"education-form":   "education-form.html",
 		"contacts-form":    "contacts-form.html",
+		"afisha":            "afisha.html",
 		"publish":           "publish.html",
 	}
 	a.templates = make(map[string]*template.Template, len(pages))

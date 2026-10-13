@@ -98,10 +98,10 @@ go run ./tools/catalogimport "пейзажи" "портреты"
 
 ### 4. Скопировать заглушки контента
 
-Контентные файлы (новости, «Об авторе», образование, выставки, контакты)
-в репозиторий не входят — в них личные данные владельца сайта. Скопируй
-заглушки из `web/src/content/template/` в `web/src/content/` и заполни
-своим текстом:
+Контентные файлы (новости, «Об авторе», образование, выставки, контакты,
+события афиши) в репозиторий не входят — в них личные данные владельца
+сайта. Скопируй заглушки из `web/src/content/template/` в
+`web/src/content/` и заполни своим текстом:
 
 ```
 copy web\src\content\template\news.json web\src\content\
@@ -109,6 +109,7 @@ copy web\src\content\template\about.json web\src\content\
 copy web\src\content\template\education.json web\src\content\
 copy web\src\content\template\exhibitions.json web\src\content\
 copy web\src\content\template\contacts.json web\src\content\
+copy web\src\content\template\afisha.json web\src\content\
 ```
 
 (`catalog.example.json` остаётся на месте — это просто образец схемы;
@@ -188,6 +189,24 @@ powershell -ExecutionPolicy Bypass -File scripts\start-admin.ps1
 | ![Админка: новости](images/news.PNG) | ![Админка: картины](images/pictures.PNG) |
 |---|---|
 | ![Админка: выставки](images/exhibitions.PNG) | ![Админка: сборка и публикация](images/build.PNG) |
+
+## Афиша — блок «Куда пойти» на главной
+
+Один раздел админки, страница «Афиша», отвечает за небольшой блок на
+главной с ближайшими выставками и лекциями: отметь нужное в списках
+найденного или добавь свои события формой на той же странице — никаких
+внешних сервисов этому не нужно. Прошедшие события скрываются
+автоматически при сборке (по датам), так что отбор прореживается редко.
+
+Необязательная кнопка «Запустить поиск» на той же странице просит
+Claude Code (headless-режим) обойти афиши московских площадок и положить
+свежие подборки в `exhibitions/` и `lectures/` в корне репозитория —
+оттуда их берёт список галочек. Нужен установленный Claude Code и
+субагент `exhibition-scout` из `.claude/agents/` (едет с репозиторием;
+корень репозитория — рабочий каталог Claude Code). Без Claude Code кнопка
+просто сообщит об этом — остальное на странице «Афиши», включая свои
+события, работает как обычно. Личный `web/src/content/afisha.json` в
+репозиторий не попадает, как и весь остальной контент.
 
 ## Деплой архивом
 
