@@ -27,7 +27,16 @@ const nav = [
       <span class="brand-name">{fullName}</span>
       <span class="brand-role">живопись, графика</span>
     </a>
-    <nav class="nav" aria-label="Основная навигация">
+    <!-- Бургер только на мобильном (CSS); подпись «Меню» рядом с иконкой —
+         чтобы кнопку не пропускали глазами. Без JS кнопки нет, меню
+         остаётся видимым строкой (fallback без прокрутки не работает). -->
+    <button type="button" class="burger" aria-expanded="false" aria-controls="main-nav">
+      <svg class="burger-icon" width="18" height="14" viewBox="0 0 18 14" aria-hidden="true">
+        <path d="M1 1h16M1 7h16M1 13h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      Меню
+    </button>
+    <nav class="nav" id="main-nav" aria-label="Основная навигация">
       {nav.map((item) => (
         <a
           href={item.href}
@@ -40,6 +49,35 @@ const nav = [
     </nav>
   </div>
 </header>
+
+<script>
+  // Бургер-меню мобильного размера: открытие/закрытие кнопкой, закрытие по
+  // клику на пункт, вне меню, Esc. На десктопе кнопки нет — всё no-op.
+  const header = document.querySelector('.site-header');
+  const burger = header?.querySelector('.burger');
+  const nav = header?.querySelector('#main-nav');
+  if (header && burger && nav) {
+    header.classList.add('has-burger'); // только с JS прячем строку меню
+
+    const close = () => {
+      nav.classList.remove('open');
+      burger.setAttribute('aria-expanded', 'false');
+    };
+    burger.addEventListener('click', () => {
+      const open = nav.classList.toggle('open');
+      burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    nav.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('a')) close();
+    });
+    document.addEventListener('click', (e) => {
+      if (!header.contains(e.target as Node)) close();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') close();
+    });
+  }
+</script>
 
 <style>
   .site-header {
@@ -73,6 +111,8 @@ const nav = [
     text-transform: lowercase;
   }
   .nav { display: flex; gap: 26px; }
+  /* Бургер скрыт всегда, кроме мобильного размера. */
+  .burger { display: none; }
   .nav-link {
     font-size: 1.18rem;
     color: var(--fg-soft);
@@ -89,7 +129,43 @@ const nav = [
     background: var(--fg);
   }
   @media (max-width: 720px) {
-    .nav { gap: 16px; overflow-x: auto; }
-    .header-inner { flex-wrap: wrap; }
+    /* Бургер вместо строки меню. Без JS класс has-burger не ставится —
+       меню остаётся видимой строкой (fallback). */
+    .has-burger .burger {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font: inherit; /* шапка на Cormorant, как и пункты меню */
+      font-size: 1.1rem;
+      color: var(--fg);
+      background: none;
+      border: 0;
+      padding: 6px 8px;
+      margin: -6px -8px; /* поля кнопки не сдвигают строку шапки */
+      cursor: pointer;
+    }
+    .burger-icon { display: block; }
+    .has-burger .nav {
+      display: none;
+      gap: 0;
+      overflow: visible;
+    }
+    /* Раскрытое: панель во всю ширину под шапкой, поверх контента. */
+    .has-burger .nav.open {
+      display: flex;
+      flex-direction: column;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      padding: 8px 24px 16px;
+    }
+    .has-burger .nav .nav-link {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .has-burger .nav .nav-link:last-child { border-bottom: 0; }
   }
 </style>
