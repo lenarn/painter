@@ -10,7 +10,7 @@ import {
   featuredArtworks,
 } from '../lib/catalog';
 import { sortedNews, newsArtworks, formatDate, resolveNewsPhoto, newsAnchorHref, type NewsItem } from '../lib/news';
-import { loadAfisha, eventDates, eventKind, type AfishaEvent } from '../lib/afisha';
+import { loadHomeAfisha, eventDates, eventKind, eventTillISO, hidePastInBrowser, type AfishaEvent } from '../lib/afisha';
 import { aboutData } from '../lib/content';
 import { ogImageSrc } from '../lib/seo';
 
@@ -26,7 +26,7 @@ const ogImage = await ogImageSrc(resolveImage(featuredArtworks(arts)[0]));
 const news = sortedNews().slice(0, 8);
 
 // «Куда пойти»: отобранные события, прошедшие отфильтрованы в lib/afisha.
-const afisha = loadAfisha();
+const afisha = loadHomeAfisha(); // только события с пометкой «на главной»
 
 // Первое изображение новости: первая работа из каталога,
 // иначе первое произвольное фото.
@@ -99,10 +99,11 @@ function newsImage(item: NewsItem) {
         <aside class="col-afisha" aria-label="Куда пойти в Москве">
           <div class="section-head">
             <h2>Куда пойти</h2>
+            <a href="/afisha" class="link-more">Вся афиша →</a>
           </div>
-          <div class="afisha-list">
+          <div class="afisha-list" id="afisha-home-list">
             {afisha.map((ev: AfishaEvent) => (
-              <article class="ev">
+              <article class="ev" data-till={eventTillISO(ev)}>
                 <p class="ev-kind">{eventKind(ev)}</p>
                 <h3 class="ev-title">
                   {ev.url ? (
@@ -122,6 +123,13 @@ function newsImage(item: NewsItem) {
       )}
     </div>
   </section>
+
+<script>
+  // Прошедшие события прячутся в браузере посетителя — пересборка сайта
+  // для этого не нужна.
+  import { hidePastInBrowser } from '../lib/afisha';
+  hidePastInBrowser();
+</script>
 
   <section class="section container">
     <div class="section-head">

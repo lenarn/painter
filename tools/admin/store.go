@@ -112,6 +112,7 @@ type AfishaEntry struct {
 	Time        string `json:"time,omitempty"`      // лекция: HH:MM
 	Description string `json:"description,omitempty"`
 	Manual      bool   `json:"manual,omitempty"` // своё событие (не из подборок агента)
+	Home        bool   `json:"home"` // показывать в блоке на главной; false пишется явно: без omitempty оно стиралось и сайт считал отсутствие поля «показывать»
 }
 
 // ContactLink — ссылка контакта (label — подпись, href — адрес).

@@ -20,6 +20,9 @@ export interface AfishaEvent {
   date?: string; // лекция: день
   time?: string; // лекция: HH:MM
   description?: string;
+  // Пометка «на главной» (вторая галочка в админке); у записей старого
+  // отбора поле отсутствует — они показаны в блоке, как раньше.
+  home?: boolean;
 }
 
 // Сегодня в зоне сборки, 'YYYY-MM-DD'.
@@ -38,6 +41,13 @@ function isActual(e: AfishaEvent): boolean {
 
 export function loadAfisha(): AfishaEvent[] {
   return (afishaData as AfishaEvent[]).filter(isActual);
+}
+
+// Блок на главной: только события с пометкой «на главной» (у записей без
+// пометки поле отсутствует — они были до деления, показываем как раньше).
+// Прошедшее фильтруется в обоих случаях.
+export function loadHomeAfisha(): AfishaEvent[] {
+  return loadAfisha().filter((e) => e.home !== false);
 }
 
 // Даты карточки: выставка — «8 окт — 29 ноя», лекция — «24 октября, 19:00».
@@ -63,4 +73,24 @@ export function eventDates(e: AfishaEvent): string {
 // Подпись типа события.
 export function eventKind(e: AfishaEvent): string {
   return e.type === 'lecture' ? 'Лекция' : 'Выставка';
+}
+
+// Последняя известная дата события ('YYYY-MM-DD') — атрибут data-till
+// в разметке: браузер посетителя прячет прошедшее сам, без пересборки.
+export function eventTillISO(e: AfishaEvent): string {
+  if (e.type === 'lecture') return e.date ?? '';
+  return e.dateEnd ?? e.dateStart ?? '';
+}
+
+// Скрыть прошедшее в браузере: у карточек афиши с data-till, чья дата
+// раньше сегоднешнего дня (местная дата посетителя), убрать из страницы.
+// События без даты не трогаем — остаются до обновления отбора.
+export function hidePastInBrowser(): void {
+  const d = new Date();
+  const pad = (n: number): string => String(n).padStart(2, '0');
+  const today = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  document.querySelectorAll<HTMLElement>('.ev[data-till]').forEach((card) => {
+    const till = card.getAttribute('data-till');
+    if (till && till < today) card.remove();
+  });
 }

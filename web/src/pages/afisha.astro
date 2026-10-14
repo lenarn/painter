@@ -1,0 +1,107 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { loadAfisha, eventDates, eventKind, eventTillISO, hidePastInBrowser, type AfishaEvent } from '../lib/afisha';
+import { fullName } from '../lib/seo';
+
+// Отбор афиши — из админки (web/src/content/afisha.json); прошедшее уже
+// отфильтровано по датам на этапе сборки (loadAfisha). Порядок — как в
+// afisha.json: хронология по дате начала.
+const events = loadAfisha();
+
+const nExhibitions = events.filter((e) => e.type === 'exhibition').length;
+const nLectures = events.length - nExhibitions;
+
+const scopeLine =
+  nLectures === 0
+    ? `${nExhibitions} выставк${nExhibitions === 1 ? 'а' : nExhibitions < 5 ? 'и' : ''}`
+    : nExhibitions === 0
+      ? `${nLectures} лекци${nLectures === 1 ? 'я' : nLectures < 5 ? 'и' : ''}`
+      : `${nExhibitions} выставок и ${nLectures} лекций`;
+---
+
+<Layout
+  title={`Куда пойти — выставки и лекции в Москве — ${fullName}`}
+  description={`Актуальные художественные выставки и лекции об искусстве в Москве: ${scopeLine}. Подборка художника ${fullName}.`}
+>
+  <section class="section container">
+    <p class="eyebrow">Афиша</p>
+    <h1>Куда пойти</h1>
+    <p class="muted">
+      Выставки и лекции об искусстве в Москве — отбор мой. Прошедшие
+      скрываются, подборка обновляется регулярно.
+    </p>
+
+    {events.length === 0 ? (
+      <p class="muted">Сейчас ничего не отобрано — заходите позже.</p>
+    ) : (
+      <div class="afisha-page-list">
+        {events.map((e) => (
+          <article class="ev" data-till={eventTillISO(e as AfishaEvent)}>
+            <p class="ev-kind">{eventKind(e as AfishaEvent)}</p>
+            <h3 class="ev-title">
+              {e.url ? (
+                <a href={e.url} target="_blank" rel="noopener">{e.title}</a>
+              ) : (
+                <span>{e.title}</span>
+              )}
+            </h3>
+            <p class="ev-meta">{e.venue}{e.venue && eventDates(e as AfishaEvent) ? ' · ' : ''}{eventDates(e as AfishaEvent)}</p>
+            {e.description && <p class="ev-desc">{e.description}</p>}
+          </article>
+        ))}
+      </div>
+    )}
+  </section>
+</Layout>
+
+<style>
+  .page-note {
+    color: var(--fg-soft);
+    margin: -8px 0 40px;
+    max-width: 52ch;
+  }
+  .empty { color: var(--fg-soft); }
+  .afisha-page-list {
+    display: flex;
+    flex-direction: column;
+    max-width: 720px;
+  }
+  .ev {
+    padding: 18px 0;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .ev:first-child { border-top: 1px solid var(--line); }
+  .ev-kind {
+    margin: 0;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+  }
+  .ev-title {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: 1.35rem;
+    margin: 0;
+  }
+  .ev-title a { color: inherit; text-decoration: none; }
+  .ev-title a:hover { color: var(--accent); }
+  .ev-meta { margin: 0; font-size: 0.88rem; color: var(--fg-soft); }
+  .ev-desc {
+    margin: 0;
+    color: var(--fg-soft);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    max-width: 62ch;
+  }
+</style>
+
+<script>
+  // Прошедшие события прячутся в браузере посетителя — пересборка сайта
+  // для этого не нужна.
+  import { hidePastInBrowser } from '../lib/afisha';
+  hidePastInBrowser();
+</script>

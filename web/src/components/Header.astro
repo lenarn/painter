@@ -15,6 +15,7 @@ const nav = [
   { href: '/gallery', label: 'Галерея' },
   { href: '/gallery/v-nalichii', label: 'В наличии' },
   { href: '/news', label: 'Новости' },
+  { href: '/afisha', label: 'Афиша' },
   { href: '/about', label: 'Об авторе' },
   { href: '/exhibitions', label: 'Выставки' },
   { href: '/contacts', label: 'Контакты' },
@@ -128,9 +129,10 @@ const nav = [
     height: 1px;
     background: var(--fg);
   }
-  @media (max-width: 720px) {
-    /* Бургер вместо строки меню. Без JS класс has-burger не ставится —
-       меню остаётся видимой строкой (fallback). */
+  @media (max-width: 960px) {
+    /* С 7 пунктами строка не гарантирует попадания уже в планшетной
+       ширине — бургер от 721px и ниже. Без JS класс has-burger не
+       ставится — меню остаётся видимой строкой (fallback). */
     .has-burger .burger {
       display: flex;
       align-items: center;

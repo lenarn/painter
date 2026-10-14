@@ -33,6 +33,11 @@
   .check { display: inline-flex; align-items: center; gap: 6px; margin: 3px 14px 3px 0;
            font-size: 14px; color: var(--fg); }
   .check input { width: auto; }
+  /* Строка пикера афиши: галочки сайта + «на главной» по краям. */
+  .pick-row { display: flex; align-items: flex-start; gap: 12px; }
+  .pick-row .check:first-child { flex: 1; }
+  .check.home-check { font-size: 13px; color: var(--muted, #666);
+                      white-space: nowrap; margin-top: 4px; margin-right: 0; }
   button { padding: 9px 20px; border: 1px solid var(--fg); border-radius: 4px;
            background: var(--fg); color: #fff; font: inherit; cursor: pointer; }
   button.ghost { background: none; color: var(--fg); }

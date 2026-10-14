@@ -36,6 +36,7 @@
       <b>{{.E.Title}}</b>
       <span class="badge">{{if eq .E.Type "lecture"}}лекция{{else}}выставка{{end}}</span>
       {{if .E.Manual}}<span class="badge">своё</span>{{end}}
+      {{if .E.Home}}<span class="badge">главная</span>{{end}}
       <div class="hint">{{.E.Venue}}{{if .E.DateEnd}} — до {{.E.DateEnd}}{{end}}
       {{if eq .E.Type "lecture"}}{{if .E.Date}} — {{.E.Date}}{{if .E.Time}}, {{.E.Time}}{{end}}{{end}}{{end}}</div>
       {{if .E.Manual}}
@@ -56,6 +57,7 @@
     <input type="text" id="afishaSearch" placeholder="Поиск по названию или музею…" oninput="filterAfisha()">
     <div class="picker" id="afisha-picker">
       {{range .Items}}
+      <div class="pick-row">
       <label class="check">
         <input type="checkbox" name="afisha" value="{{.Key}}" {{if index $.Checked .Key}}checked{{end}}>
         <span><b>{{.Title}}</b>
@@ -64,11 +66,18 @@
         <div class="hint">{{.Venue}}{{if .URL}}
         <a href="{{.URL}}" target="_blank" rel="noopener" style="margin-left:6px">смотреть →</a>{{end}}</div></span>
       </label>
+      <label class="check home-check">
+        <input type="checkbox" name="afisha-home" value="{{.Key}}" {{if index $.HomeChecked .Key}}checked{{end}}>
+        на главной
+      </label>
+      </div>
       {{else}}
       <div class="hint">Подборок агента ещё нет: запусти поиск выставок/лекций — появятся здесь.</div>
       {{end}}
     </div>
-    <div class="hint">Снимешь галочку → уберёшь с сайта. Прошедшие события (зелёная отметка «прошло») на сайт не попадают, но и не удаляются — за датами следить не надо.</div>
+    <div class="hint">Первая галочка — событие на сайте (страница «Куда пойти»),
+    вторая — ещё и в блоке на главной. Снимешь первую → исчезнет с сайта совсем.
+    Прошедшие события (отметка «прошло») на сайт не попадают, но и не удаляются — за датами следить не надо.</div>
   </div>
   <p><button type="submit">Сохранить</button></p>
 </form>

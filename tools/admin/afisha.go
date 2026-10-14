@@ -254,7 +254,10 @@ func (a *admin) handleAfishaAdd(w http.ResponseWriter, r *http.Request) {
 	}
 
 	entry.Manual = true // своё — переживает любое сохранение отбора
-	st.Afisha = append(st.Afisha, entry)
+	entry.Home = true   // и всегда на главной
+	// Первое в списке (решение Елены): своя выставка — самое живое и
+	// важное, пусть первой встречает и на главной, и на странице.
+	st.Afisha = append([]AfishaEntry{entry}, st.Afisha...)
 	if err := st.SaveAfisha(); err != nil {
 		a.renderAfisha(w, st, []string{"Не удалось записать afisha.json: " + err.Error()}, "")
 		return
@@ -303,6 +306,12 @@ func (a *admin) renderAfisha(w http.ResponseWriter, st *Store, errs []string, sa
 	for _, e := range st.Afisha {
 		checked[afishaKey(e)] = true
 	}
+	homeChecked := map[string]bool{}
+	for _, e := range st.Afisha {
+		if e.Home || e.Manual {
+			homeChecked[afishaKey(e)] = true
+		}
+	}
 	views := make([]eventView, 0, len(raw))
 	for _, e := range raw {
 		views = append(views, eventView{
@@ -327,6 +336,7 @@ func (a *admin) renderAfisha(w http.ResponseWriter, st *Store, errs []string, sa
 		"Page":    "afisha",
 		"Items":   views,
 		"Checked": checked,
+		"HomeChecked": homeChecked, // галочки «на главной»
 		"Count":   len(st.Afisha),
 		"Picked":  selected,
 		"Past":    nPast,
@@ -349,6 +359,11 @@ func (a *admin) handleAfishaSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	checked := trimList(r.Form["afisha"])
+	home := trimList(r.Form["afisha-home"]) // вторая галочка: на главной
+	homeSet := make(map[string]bool, len(home))
+	for _, k := range home {
+		homeSet[k] = true
+	}
 	raw := loadScoutedEvents(a.root)
 	byKey := make(map[string]AfishaEntry, len(raw))
 	for _, e := range raw {
@@ -360,19 +375,26 @@ func (a *admin) handleAfishaSave(w http.ResponseWriter, r *http.Request) {
 		stored[afishaKey(e)] = e
 	}
 	// Свои события (manual) на сайте всегда — независимо от чекбоксов:
-	// в пикере их нет, снятие галочек их не должно затирать.
+	// в пикере их нет, снятие галочек их не должно затирать. Они же всегда
+	// и на главной.
 	out := make([]AfishaEntry, 0, len(checked)+1)
 	for _, e := range st.Afisha {
 		if e.Manual {
+			e.Home = true
 			out = append(out, e)
 		}
 	}
 	for _, k := range checked {
-		if e, ok := byKey[k]; ok {
-			out = append(out, e)
-		} else if e, ok := stored[k]; ok {
-			out = append(out, e)
+		var e AfishaEntry
+		if v, ok := byKey[k]; ok {
+			e = v
+		} else if v, ok := stored[k]; ok {
+			e = v
+		} else {
+			continue
 		}
+		e.Home = homeSet[k] // остальное отобранное — только на странице
+		out = append(out, e)
 	}
 	st.Afisha = out
 	if err := st.SaveAfisha(); err != nil {

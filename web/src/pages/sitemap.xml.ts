@@ -20,6 +20,7 @@ export const GET: APIRoute = ({ site }) => {
 
     push('/');
     push('/about');
+    push('/afisha');
     push('/contacts');
     push('/exhibitions');
     push('/gallery');
