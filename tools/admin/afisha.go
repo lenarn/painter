@@ -77,25 +77,26 @@ func loadScoutedEvents(root string) []ScoutedEvent {
 	return out
 }
 
-// sortScouted — свежие (по последней известной дате) события сверху.
+// sortScouted — хронологический порядок по дате НАЧАЛА (решение Елены
+// 2026-10-14): что раньше начнётся — то сверху, что позже или ещё успеешь —
+// ниже; без даты («даты уточняются») — в самый низ.
 func sortScouted(evs []ScoutedEvent) {
-	lastDate := func(e ScoutedEvent) string {
-		s := e.Date
+	startDate := func(e ScoutedEvent) string {
 		if e.Type == "lecture" {
-			return s
+			return e.Date
 		}
-		if e.DateEnd > s {
-			return e.DateEnd
+		if e.DateStart == "" && e.DateEnd != "" {
+			return e.DateEnd // начало неизвестно — ставим по концу
 		}
-		if s == "" {
-			return e.DateStart
-		}
-		return s
+		return e.DateStart
 	}
 	sort.SliceStable(evs, func(x, y int) bool {
-		xd, yd := lastDate(evs[x]), lastDate(evs[y])
+		xd, yd := startDate(evs[x]), startDate(evs[y])
+		if xd == "" != (yd == "") { // без даты — в конец
+			return yd == ""
+		}
 		if xd != yd {
-			return xd > yd
+			return xd < yd
 		}
 		return evs[x].Title < evs[y].Title
 	})
@@ -115,6 +116,7 @@ type eventView struct {
 	Title  string
 	Venue  string
 	Dates  string // «08.10 — 29.11» / «24.10, 19:00»
+	URL    string // источник для предпросмотра (оценить перед отбором)
 	Past   bool   // последняя известная дата уже прошла
 }
 
@@ -309,6 +311,7 @@ func (a *admin) renderAfisha(w http.ResponseWriter, st *Store, errs []string, sa
 			Title: e.Title,
 			Venue: e.Venue,
 			Dates: eventDates(e),
+			URL:   e.URL,
 			Past:  isPast(e),
 		})
 	}

@@ -244,6 +244,10 @@ function newsImage(item: NewsItem) {
 
   .themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
   .theme {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 18px 22px; border: 1px solid var(--line); border-radius: var(--radius);
+    transition: border-color 0.2s ease, transform 0.2s ease;
+  }
   .theme:hover { border-color: var(--fg); transform: translateY(-2px); }
   .theme-name { font-family: var(--font-serif); font-size: 1.1rem; }
   .theme-count { font-size: 0.8rem; color: var(--fg-soft); }
